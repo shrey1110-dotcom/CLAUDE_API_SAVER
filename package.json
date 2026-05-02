@@ -7,7 +7,19 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "telemetry:summary": "node dist/telemetry/summary.js",
+    "telemetry:report": "node dist/telemetry/report.js",
+    "telemetry:test": "node dist/telemetry/test.js",
+    "validate": "npm run build && npm run telemetry:test && npm run telemetry:summary && npm run telemetry:report",
+    "test": "vitest run tests/tools.test.ts tests/telemetry.test.ts",
+    "test:edge": "vitest run tests/edge.test.ts",
+    "test:security": "vitest run tests/security.test.ts",
+    "test:benchmark": "vitest run tests/budget.test.ts",
+    "test:all": "npm run build && npm run test && npm run test:edge && npm run test:security && npm run test:benchmark && npm run benchmark:compact && npm run validate && npm run benchmark:workflow && npm run deep-test:report",
+    "benchmark:compact": "node dist/benchmark/compact.js",
+    "benchmark:workflow": "node dist/benchmark/workflow.js",
+    "deep-test:report": "node dist/scripts/generateDeepTestReport.js"
   },
   "engines": {
     "node": ">=18"
@@ -19,7 +31,8 @@
   "devDependencies": {
     "@types/node": "^22.13.10",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.9"
   },
   "license": "MIT",
   "repository": {
