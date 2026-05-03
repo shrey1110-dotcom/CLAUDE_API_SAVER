@@ -5,9 +5,20 @@ export const EXCLUDE_DIRS = new Set([
   "build",
   ".next",
   "coverage",
+  ".mcp-telemetry",
 ]);
 
 export const TREE_EXCLUDE_DIRS = new Set([...EXCLUDE_DIRS, ".cursor"]);
+
+export const SEARCH_SKIP_FILE_NAMES = new Set([
+  "package-lock.json",
+  "pnpm-lock.yaml",
+  "yarn.lock",
+  "bun.lockb",
+  "bun.lock",
+]);
+
+export const SEARCH_SKIP_FILE_SUFFIXES = [".min.js", ".min.css", ".map", ".lock"];
 
 export const MAX_OUTPUT_BYTES = 30_720;
 
