@@ -3,7 +3,10 @@
     "repo-context-mcp": {
       "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/dist/index.js"]
+      "args": ["${workspaceFolder}/dist/index.js"],
+      "env": {
+        "MCP_TELEMETRY": "1"
+      }
     }
   }
 }
