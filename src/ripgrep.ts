@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { EXCLUDE_DIRS, MAX_FILE_BYTES, MAX_WALK_FILES } from "./constants.js";
+import { EXCLUDE_DIRS, MAX_FILE_BYTES, MAX_WALK_FILES, SEARCH_SKIP_FILE_NAMES, SEARCH_SKIP_FILE_SUFFIXES } from "./constants.js";
 import { resolveSafePath, toRelativePath } from "./pathSafety.js";
 
 export interface SearchMatch {
@@ -16,6 +16,7 @@ export interface RipgrepOptions {
   query: string;
   maxResults: number;
   filePath?: string;
+  contextPadding?: number;
 }
 
 export function isRipgrepAvailable(): boolean {
@@ -32,6 +33,16 @@ export function searchWithRipgrep(options: RipgrepOptions): SearchMatch[] {
     "--glob",
     "!.git/*",
     ...[...EXCLUDE_DIRS].flatMap((dir) => ["--glob", `!${dir}/**`]),
+    "--glob",
+    "!package-lock.json",
+    "--glob",
+    "!pnpm-lock.yaml",
+    "--glob",
+    "!yarn.lock",
+    "--glob",
+    "!*.min.js",
+    "--glob",
+    "!*.map",
   ];
 
   if (options.filePath) {
@@ -55,7 +66,7 @@ export function searchWithRipgrep(options: RipgrepOptions): SearchMatch[] {
     throw new Error(result.stderr || `ripgrep failed with exit code ${result.status}`);
   }
 
-  return parseRipgrepJson(result.stdout, options.root);
+  return parseRipgrepJson(result.stdout, options.root, options.contextPadding ?? 2);
 }
 
 export function searchWithNode(options: RipgrepOptions): SearchMatch[] {
@@ -100,7 +111,7 @@ export function searchWithNode(options: RipgrepOptions): SearchMatch[] {
           filePath: toRelativePath(options.root, filePath),
           lineNumber: i + 1,
           line: lines[i],
-          context: getContextLines(lines, i, 2),
+          context: getContextLines(lines, i, options.contextPadding ?? 2),
         });
       }
     }
@@ -120,7 +131,7 @@ export function searchCode(options: RipgrepOptions): SearchMatch[] {
   return searchWithNode(options);
 }
 
-function parseRipgrepJson(output: string, root: string): SearchMatch[] {
+function parseRipgrepJson(output: string, root: string, contextPadding: number): SearchMatch[] {
   const matches: SearchMatch[] = [];
   const linesByFile = new Map<string, string[]>();
 
@@ -153,7 +164,7 @@ function parseRipgrepJson(output: string, root: string): SearchMatch[] {
       filePath: relativePath,
       lineNumber: parsed.data.line_number,
       line: parsed.data.lines?.text?.replace(/\n$/, "") ?? fileLines[lineIndex] ?? "",
-      context: getContextLines(fileLines, lineIndex, 2),
+      context: getContextLines(fileLines, lineIndex, contextPadding),
     });
   }
 
@@ -182,11 +193,21 @@ function walkFiles(currentDir: string, root: string, files: string[] = []): stri
       }
       walkFiles(path.join(currentDir, entry.name), root, files);
     } else if (entry.isFile()) {
+      if (shouldSkipSearchFile(entry.name)) {
+        continue;
+      }
       files.push(path.join(currentDir, entry.name));
     }
   }
 
   return files;
+}
+
+function shouldSkipSearchFile(fileName: string): boolean {
+  if (SEARCH_SKIP_FILE_NAMES.has(fileName)) {
+    return true;
+  }
+  return SEARCH_SKIP_FILE_SUFFIXES.some((suffix) => fileName.endsWith(suffix));
 }
 
 function buildSearchRegex(query: string): RegExp {
