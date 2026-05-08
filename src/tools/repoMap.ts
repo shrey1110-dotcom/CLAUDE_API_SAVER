@@ -1,3 +1,4 @@
+import { getConfig, isCompactMode } from "../config.js";
 import { TREE_EXCLUDE_DIRS } from "../constants.js";
 import {
   buildDirectoryTree,
@@ -11,13 +12,16 @@ import { resolveRoot } from "../pathSafety.js";
 
 export function repoMap(root?: string) {
   const resolvedRoot = resolveRoot(root);
+  const config = getConfig();
+  const scripts = readPackageScripts(resolvedRoot);
+
   return {
-    root: resolvedRoot,
+    root: isCompactMode() ? "." : resolvedRoot,
     packageManager: detectPackageManager(resolvedRoot),
     languages: detectLanguages(resolvedRoot),
     frameworks: detectFrameworks(resolvedRoot),
     configFiles: findImportantConfigFiles(resolvedRoot),
-    scripts: readPackageScripts(resolvedRoot),
-    tree: buildDirectoryTree(resolvedRoot, TREE_EXCLUDE_DIRS, 2),
+    scripts: isCompactMode() ? Object.keys(scripts) : scripts,
+    tree: buildDirectoryTree(resolvedRoot, TREE_EXCLUDE_DIRS, config.treeDepth),
   };
 }
