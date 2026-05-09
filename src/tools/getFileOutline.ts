@@ -1,87 +1,46 @@
 import fs from "node:fs";
+import { isCompactMode } from "../config.js";
 import { MAX_OUTLINE_FILE_BYTES } from "../constants.js";
 import { assertReadableFile, resolveRoot, resolveSafePath, toRelativePath } from "../pathSafety.js";
 
-export interface FileOutline {
-  filePath: string;
-  imports: string[];
-  exports: string[];
-  topLevel: string[];
+export interface OutlineSymbol {
+  name: string;
+  line: number;
+  kind: string;
 }
 
-const IMPORT_PATTERNS = [
-  /^import\s+.+from\s+['"].+['"]/,
-  /^import\s+['"].+['"]/,
-  /^import\s+\{?.+\}?\s+from\s+['"].+['"]/,
-  /require\s*\(\s*['"].+['"]\s*\)/,
-  /^from\s+.+\s+import\s+/,
-  /^import\s+\w+/,
+export interface FileOutline {
+  filePath: string;
+  imports: string[] | OutlineSymbol[];
+  exports: string[] | OutlineSymbol[];
+  topLevel: string[] | OutlineSymbol[];
+}
+
+const IMPORT_FROM = /from\s+['"]([^'"]+)['"]/;
+const IMPORT_SIDE = /^import\s+['"]([^'"]+)['"]/;
+const REQUIRE = /require\(\s*['"]([^'"]+)['"]\s*\)/;
+
+const EXPORT_PATTERNS: Array<{ pattern: RegExp; kind: string; nameIndex?: number }> = [
+  { pattern: /^export\s+default\s+(?:async\s+)?function\s+(\w+)/, kind: "default-export-function", nameIndex: 1 },
+  { pattern: /^export\s+default\s+class\s+(\w+)/, kind: "default-export-class", nameIndex: 1 },
+  { pattern: /^export\s+default\s+/, kind: "default-export" },
+  { pattern: /^export\s+(?:async\s+)?function\s+(\w+)/, kind: "function", nameIndex: 1 },
+  { pattern: /^export\s+class\s+(\w+)/, kind: "class", nameIndex: 1 },
+  { pattern: /^export\s+(?:const|let|var)\s+(\w+)/, kind: "const", nameIndex: 1 },
+  { pattern: /^export\s+interface\s+(\w+)/, kind: "interface", nameIndex: 1 },
+  { pattern: /^export\s+type\s+(\w+)/, kind: "type", nameIndex: 1 },
 ];
 
-const EXPORT_PATTERNS = [
-  /^export\s+default\b/,
-  /^export\s+(?:async\s+)?function\s+\w+/,
-  /^export\s+class\s+\w+/,
-  /^export\s+(?:const|let|var)\s+\w+/,
-  /^export\s+\{.+}/,
-  /^export\s+\*\s+from\s+['"].+['"]/,
-  /^module\.exports\s*=/,
-  /^exports\.\w+\s*=/,
+const TOP_LEVEL_PATTERNS: Array<{ pattern: RegExp; kind: string; nameIndex: number }> = [
+  { pattern: /^(?:export\s+)?(?:async\s+)?function\s+(\w+)/, kind: "function", nameIndex: 1 },
+  { pattern: /^(?:export\s+)?class\s+(\w+)/, kind: "class", nameIndex: 1 },
+  { pattern: /^(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=/, kind: "const", nameIndex: 1 },
+  { pattern: /^def\s+(\w+)\s*\(/, kind: "function", nameIndex: 1 },
+  { pattern: /^async\s+def\s+(\w+)\s*\(/, kind: "function", nameIndex: 1 },
 ];
 
-const TOP_LEVEL_PATTERNS = [
-  /^(?:async\s+)?function\s+(\w+)/,
-  /^class\s+(\w+)/,
-  /^(?:const|let|var)\s+(\w+)\s*=/,
-  /^def\s+(\w+)\s*\(/,
-  /^async\s+def\s+(\w+)\s*\(/,
-];
-
-export function getFileOutline(filePath: string, root?: string): FileOutline {
-  const resolvedRoot = resolveRoot(root);
-  const resolvedPath = resolveSafePath(resolvedRoot, filePath);
-  assertReadableFile(resolvedPath, MAX_OUTLINE_FILE_BYTES);
-
-  const content = fs.readFileSync(resolvedPath, "utf8");
-  const lines = content.split(/\r?\n/);
-
-  const imports = new Set<string>();
-  const exports = new Set<string>();
-  const topLevel = new Set<string>();
-
-  let depth = 0;
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line || line.startsWith("//") || line.startsWith("#")) {
-      continue;
-    }
-
-    depth += countBraces(rawLine);
-
-    if (IMPORT_PATTERNS.some((pattern) => pattern.test(line))) {
-      imports.add(line);
-    }
-
-    if (EXPORT_PATTERNS.some((pattern) => pattern.test(line))) {
-      exports.add(line);
-    }
-
-    if (depth <= 1) {
-      for (const pattern of TOP_LEVEL_PATTERNS) {
-        const match = line.match(pattern);
-        if (match?.[1]) {
-          topLevel.add(match[1]);
-        }
-      }
-    }
-  }
-
-  return {
-    filePath: toRelativePath(resolvedRoot, resolvedPath),
-    imports: [...imports].slice(0, 100),
-    exports: [...exports].slice(0, 100),
-    topLevel: [...topLevel].slice(0, 100),
-  };
+function parseImportModule(line: string): string | null {
+  return line.match(IMPORT_FROM)?.[1] ?? line.match(IMPORT_SIDE)?.[1] ?? line.match(REQUIRE)?.[1] ?? null;
 }
 
 function countBraces(line: string): number {
@@ -91,4 +50,72 @@ function countBraces(line: string): number {
     if (char === "}") delta -= 1;
   }
   return delta;
+}
+
+export function getFileOutline(filePath: string, root?: string): FileOutline {
+  const resolvedRoot = resolveRoot(root);
+  const resolvedPath = resolveSafePath(resolvedRoot, filePath);
+  assertReadableFile(resolvedPath, MAX_OUTLINE_FILE_BYTES);
+
+  const content = fs.readFileSync(resolvedPath, "utf8");
+  const lines = content.split(/\r?\n/);
+  const compact = isCompactMode();
+
+  const imports = new Map<string, OutlineSymbol>();
+  const exports = new Map<string, OutlineSymbol>();
+  const topLevel = new Map<string, OutlineSymbol>();
+
+  let depth = 0;
+  for (let index = 0; index < lines.length; index++) {
+    const rawLine = lines[index];
+    const line = rawLine.trim();
+    const lineNumber = index + 1;
+
+    if (!line || line.startsWith("//") || line.startsWith("#")) {
+      continue;
+    }
+
+    depth += countBraces(rawLine);
+
+    const importModule = parseImportModule(line);
+    if (importModule) {
+      imports.set(importModule, { name: importModule, line: lineNumber, kind: "import" });
+    } else if (!compact && /^(import|from|require)/.test(line)) {
+      imports.set(line, { name: line, line: lineNumber, kind: "import" });
+    }
+
+    for (const entry of EXPORT_PATTERNS) {
+      const match = line.match(entry.pattern);
+      if (match) {
+        const name = entry.nameIndex ? match[entry.nameIndex] : "default";
+        exports.set(`${name}:${lineNumber}`, { name, line: lineNumber, kind: entry.kind });
+        break;
+      }
+    }
+
+    if (depth <= 1) {
+      for (const entry of TOP_LEVEL_PATTERNS) {
+        const match = line.match(entry.pattern);
+        if (match?.[entry.nameIndex]) {
+          const name = match[entry.nameIndex];
+          topLevel.set(name, { name, line: lineNumber, kind: entry.kind });
+        }
+      }
+    }
+  }
+
+  const toList = (map: Map<string, OutlineSymbol>) => {
+    const values = [...map.values()].slice(0, 100);
+    if (compact) {
+      return values;
+    }
+    return values.map((item) => `${item.name} (${item.kind}, line ${item.line})`);
+  };
+
+  return {
+    filePath: toRelativePath(resolvedRoot, resolvedPath),
+    imports: toList(imports),
+    exports: toList(exports),
+    topLevel: toList(topLevel),
+  };
 }
