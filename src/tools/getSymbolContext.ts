@@ -1,12 +1,15 @@
 import fs from "node:fs";
-import { MAX_SYMBOL_BLOCK_LINES } from "../constants.js";
-import { buildSymbolPatterns, getContextLines, searchCode } from "../ripgrep.js";
+import { getConfig } from "../config.js";
+import { buildSymbolPatterns, searchCode } from "../ripgrep.js";
 import { resolveRoot, resolveSafePath } from "../pathSafety.js";
 
 export interface SymbolContextMatch {
   filePath: string;
   symbolLine: number;
+  startLine: number;
+  endLine: number;
   block: string[];
+  truncated?: boolean;
 }
 
 export function getSymbolContext(symbol: string, root?: string, maxResults = 5): { symbol: string; matches: SymbolContextMatch[] } {
@@ -14,6 +17,7 @@ export function getSymbolContext(symbol: string, root?: string, maxResults = 5):
     throw new Error("symbol is required");
   }
 
+  const config = getConfig();
   const resolvedRoot = resolveRoot(root);
   const patterns = buildSymbolPatterns(symbol);
   const seen = new Set<string>();
@@ -27,7 +31,8 @@ export function getSymbolContext(symbol: string, root?: string, maxResults = 5):
     const searchMatches = searchCode({
       root: resolvedRoot,
       query: pattern,
-      maxResults: maxResults * 2,
+      maxResults: maxResults * 3,
+      contextPadding: 0,
     });
 
     for (const match of searchMatches) {
@@ -39,16 +44,24 @@ export function getSymbolContext(symbol: string, root?: string, maxResults = 5):
       if (seen.has(key)) {
         continue;
       }
-      seen.add(key);
 
       const absolutePath = resolveSafePath(resolvedRoot, match.filePath);
       const lines = fs.readFileSync(absolutePath, "utf8").split(/\r?\n/);
-      const block = extractSymbolBlock(lines, match.lineNumber - 1);
+      const lineText = lines[match.lineNumber - 1] ?? "";
+      if (!isSymbolDefinitionLine(lineText, symbol)) {
+        continue;
+      }
+
+      seen.add(key);
+      const extracted = extractSymbolBlock(lines, match.lineNumber - 1, config.symbolContextLines);
 
       matches.push({
         filePath: match.filePath,
         symbolLine: match.lineNumber,
-        block,
+        startLine: extracted.startLine,
+        endLine: extracted.endLine,
+        block: extracted.block,
+        truncated: extracted.truncated,
       });
     }
   }
@@ -56,18 +69,46 @@ export function getSymbolContext(symbol: string, root?: string, maxResults = 5):
   return { symbol, matches };
 }
 
-function extractSymbolBlock(lines: string[], lineIndex: number): string[] {
+function isSymbolDefinitionLine(line: string, symbol: string): boolean {
+  const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(
+    `(?:^|\\s)(?:export\\s+)?(?:async\\s+)?(?:function|class|const|let|var)\\s+${escaped}\\b|^def\\s+${escaped}\\b|(?:const|let|var)\\s+${escaped}\\s*=`,
+  ).test(line);
+}
+
+function extractSymbolBlock(lines: string[], lineIndex: number, maxLines: number): {
+  startLine: number;
+  endLine: number;
+  block: string[];
+  truncated: boolean;
+} {
   const start = findBlockStart(lines, lineIndex);
   const end = findBlockEnd(lines, start);
-  const blockLines = lines.slice(start, end + 1);
+  const totalLines = end - start + 1;
+  const truncated = totalLines > maxLines;
 
-  if (blockLines.length <= MAX_SYMBOL_BLOCK_LINES) {
-    return blockLines.map((line, index) => `${start + index + 1}: ${line}`);
+  let sliceStart = start;
+  let sliceEnd = end;
+  if (truncated) {
+    sliceStart = Math.max(start, lineIndex - Math.floor(maxLines / 2));
+    sliceEnd = Math.min(end, sliceStart + maxLines - 1);
   }
 
-  const centeredStart = Math.max(start, lineIndex - Math.floor(MAX_SYMBOL_BLOCK_LINES / 2));
-  const centeredEnd = Math.min(end, centeredStart + MAX_SYMBOL_BLOCK_LINES - 1);
-  return lines.slice(centeredStart, centeredEnd + 1).map((line, index) => `${centeredStart + index + 1}: ${line}`);
+  const block = lines.slice(sliceStart, sliceEnd + 1).map((line, index) => {
+    const currentLine = sliceStart + index + 1;
+    return `${currentLine}: ${line}`;
+  });
+
+  if (truncated) {
+    block.push(`... [truncated: body exceeded ${maxLines} context lines]`);
+  }
+
+  return {
+    startLine: sliceStart + 1,
+    endLine: sliceEnd + 1,
+    block,
+    truncated,
+  };
 }
 
 function findBlockStart(lines: string[], lineIndex: number): number {
@@ -102,7 +143,7 @@ function findBlockEnd(lines: string[], start: number): number {
     }
   }
 
-  return Math.min(lines.length - 1, start + MAX_SYMBOL_BLOCK_LINES - 1);
+  return Math.min(lines.length - 1, start + 40);
 }
 
 function findPythonBlockEnd(lines: string[], start: number): number {
@@ -122,5 +163,3 @@ function findPythonBlockEnd(lines: string[], start: number): number {
   }
   return end;
 }
-
-export { getContextLines };
