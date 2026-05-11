@@ -1,7 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { getConfig } from "./config.js";
 import { formatToolResult, toolError } from "./output.js";
+import { withTelemetry } from "./telemetry/logger.js";
 import { getFileOutline } from "./tools/getFileOutline.js";
 import { getProjectCommands } from "./tools/getProjectCommands.js";
 import { getSymbolContext } from "./tools/getSymbolContext.js";
@@ -13,13 +15,19 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-function handleTool<T>(handler: () => T) {
-  try {
-    return formatToolResult(handler());
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return toolError(message);
-  }
+async function handleTool<T>(
+  toolName: string,
+  args: Record<string, unknown>,
+  handler: () => T | Promise<T>,
+) {
+  return withTelemetry(toolName, args, async () => {
+    try {
+      return formatToolResult(await handler());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return toolError(message);
+    }
+  });
 }
 
 server.tool(
@@ -28,7 +36,7 @@ server.tool(
   {
     root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
   },
-  async ({ root }) => handleTool(() => repoMap(root)),
+  async ({ root }) => handleTool("repo_map", { root }, () => repoMap(root)),
 );
 
 server.tool(
@@ -39,7 +47,10 @@ server.tool(
     root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
     maxResults: z.number().int().positive().max(100).optional().describe("Maximum number of matches to return."),
   },
-  async ({ query, root, maxResults }) => handleTool(() => searchCodeTool(query, root, maxResults ?? 20)),
+  async ({ query, root, maxResults }) => {
+    const limit = maxResults ?? getConfig().defaultSearchResults;
+    return handleTool("search_code", { query, root, maxResults: limit }, () => searchCodeTool(query, root, limit));
+  },
 );
 
 server.tool(
@@ -49,7 +60,7 @@ server.tool(
     filePath: z.string().describe("Path to the file, relative to root or absolute within root."),
     root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
   },
-  async ({ filePath, root }) => handleTool(() => getFileOutline(filePath, root)),
+  async ({ filePath, root }) => handleTool("get_file_outline", { filePath, root }, () => getFileOutline(filePath, root)),
 );
 
 server.tool(
@@ -60,7 +71,10 @@ server.tool(
     root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
     maxResults: z.number().int().positive().max(20).optional().describe("Maximum number of symbol matches."),
   },
-  async ({ symbol, root, maxResults }) => handleTool(() => getSymbolContext(symbol, root, maxResults ?? 5)),
+  async ({ symbol, root, maxResults }) =>
+    handleTool("get_symbol_context", { symbol, root, maxResults: maxResults ?? 5 }, () =>
+      getSymbolContext(symbol, root, maxResults ?? 5),
+    ),
 );
 
 server.tool(
@@ -69,7 +83,7 @@ server.tool(
   {
     root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
   },
-  async ({ root }) => handleTool(() => getProjectCommands(root)),
+  async ({ root }) => handleTool("get_project_commands", { root }, () => getProjectCommands(root)),
 );
 
 async function main() {
