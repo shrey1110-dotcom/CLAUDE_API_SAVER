@@ -1,13 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
+import { isCompactMode } from "../config.js";
 import { readJsonFile, readPackageScripts } from "../detect.js";
 import { resolveRoot } from "../pathSafety.js";
 
 interface CommandResult {
-  scripts: Record<string, string>;
+  scripts: Record<string, string> | string[];
   likelyTest: string | null;
   likelyLint: string | null;
   likelyDev: string | null;
+  likelyInstall: string | null;
   sources: string[];
 }
 
@@ -59,13 +61,37 @@ export function getProjectCommands(root?: string): CommandResult {
     addIfMissing(scripts, "dev", "go run .");
   }
 
-  return {
-    scripts,
+  const result = {
+    scripts: isCompactMode() ? Object.keys(scripts) : scripts,
     likelyTest: pickLikelyCommand(scripts, ["test", "test:unit", "test:ci", "pytest"]),
     likelyLint: pickLikelyCommand(scripts, ["lint", "lint:fix", "eslint", "ruff", "clippy"]),
     likelyDev: pickLikelyCommand(scripts, ["dev", "start:dev", "serve", "develop", "start"]),
+    likelyInstall: pickLikelyCommand(scripts, ["install", "ci", "prepare"]) ?? inferInstallCommand(resolvedRoot),
     sources,
   };
+
+  if (isCompactMode()) {
+    return {
+      ...result,
+      likelyTest: result.likelyTest ? result.likelyTest.split(":")[0] : null,
+      likelyLint: result.likelyLint ? result.likelyLint.split(":")[0] : null,
+      likelyDev: result.likelyDev ? result.likelyDev.split(":")[0] : null,
+      likelyInstall: result.likelyInstall,
+    };
+  }
+
+  return result;
+}
+
+function inferInstallCommand(root: string): string | null {
+  const manager = ["pnpm-lock.yaml", "yarn.lock", "package-lock.json", "bun.lockb"].find((file) =>
+    fs.existsSync(path.join(root, file)),
+  );
+  if (manager?.startsWith("pnpm")) return "pnpm install";
+  if (manager === "yarn.lock") return "yarn install";
+  if (manager === "bun.lockb") return "bun install";
+  if (fs.existsSync(path.join(root, "package.json"))) return "npm install";
+  return null;
 }
 
 function addIfMissing(scripts: Record<string, string>, key: string, value: string | null): void {
