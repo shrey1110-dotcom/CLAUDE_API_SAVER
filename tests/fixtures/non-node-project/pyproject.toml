@@ -1,0 +1,5 @@
+[project]
+name = "py-demo"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

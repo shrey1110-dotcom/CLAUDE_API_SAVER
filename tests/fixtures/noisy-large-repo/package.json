@@ -1,0 +1,1 @@
+{"name":"noisy","scripts":{"dev":"node src/real-file.ts"}}
