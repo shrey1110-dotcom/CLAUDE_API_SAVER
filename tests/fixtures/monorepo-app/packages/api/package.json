@@ -1,0 +1,1 @@
+{"name":"@demo/api","scripts":{"test":"vitest","dev":"node src/index.js"}}

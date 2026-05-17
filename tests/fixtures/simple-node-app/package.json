@@ -1,0 +1,1 @@
+{"name":"simple-node-app","scripts":{"dev":"tsx src/index.ts","test":"vitest run","lint":"eslint ."},"dependencies":{"express":"^4.19.0"}}
