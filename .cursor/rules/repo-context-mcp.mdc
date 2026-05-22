@@ -1,0 +1,16 @@
+---
+description: Use repo-context MCP tools before broad file reads
+globs:
+alwaysApply: true
+---
+
+Before reading broad file contents, use the repo-context MCP tools first.
+
+For repo discovery:
+1. Use repo_map to understand structure.
+2. Use search_code for keywords.
+3. Use get_file_outline before reading a full file.
+4. Use get_symbol_context for function/class-level context.
+5. Only read full files when making or verifying an edit.
+
+Prefer small symbol-level context over full file dumps.
