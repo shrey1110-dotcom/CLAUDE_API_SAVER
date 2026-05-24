@@ -1,0 +1,7 @@
+{
+  "name": "repo-context-mcp",
+  "version": "1.0.0",
+  "description": "Read-only MCP server that returns small, precise repo information",
+  "type": "module",
+  "main": "dist/index.js"
+}
