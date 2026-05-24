@@ -50,3 +50,15 @@ export const IMPORTANT_CONFIG_FILES = [
   "turbo.json",
   "pnpm-workspace.yaml",
 ];
+
+export const LOCKFILES: Record<string, string> = {
+  "pnpm-lock.yaml": "pnpm",
+  "yarn.lock": "yarn",
+  "package-lock.json": "npm",
+  "bun.lockb": "bun",
+  "bun.lock": "bun",
+  "Cargo.lock": "cargo",
+  "poetry.lock": "poetry",
+  "uv.lock": "uv",
+  "Gemfile.lock": "bundler",
+};
