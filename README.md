@@ -148,3 +148,14 @@ Return runnable project commands.
 - likely dev command
 
 Reads `package.json`, `pyproject.toml`, `Makefile`, `Cargo.toml`, and `go.mod` when present.
+
+## Security
+
+- All file reads are constrained to the resolved project root
+- No API keys or network access required
+- No subprocess execution beyond optional ripgrep for search
+- No mutating operations
+
+## License
+
+MIT
