@@ -18,3 +18,35 @@ export const MAX_OUTLINE_FILE_BYTES = 256 * 1024;
 export const MAX_SYMBOL_BLOCK_LINES = 40;
 
 export const MAX_WALK_FILES = 5000;
+
+export const IMPORTANT_CONFIG_FILES = [
+  "package.json",
+  "tsconfig.json",
+  "jsconfig.json",
+  "vite.config.ts",
+  "vite.config.js",
+  "next.config.js",
+  "next.config.mjs",
+  "next.config.ts",
+  "webpack.config.js",
+  "rollup.config.js",
+  "eslint.config.js",
+  "eslint.config.mjs",
+  ".eslintrc",
+  ".eslintrc.json",
+  ".eslintrc.js",
+  "prettier.config.js",
+  ".prettierrc",
+  "docker-compose.yml",
+  "docker-compose.yaml",
+  "Dockerfile",
+  "pyproject.toml",
+  "requirements.txt",
+  "Pipfile",
+  "go.mod",
+  "Cargo.toml",
+  "Gemfile",
+  "Makefile",
+  "turbo.json",
+  "pnpm-workspace.yaml",
+];
