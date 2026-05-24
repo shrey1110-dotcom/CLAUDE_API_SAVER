@@ -25,5 +25,12 @@
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git"
-  }
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "cursor",
+    "repo-context",
+    "typescript"
+  ]
 }
