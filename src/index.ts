@@ -62,3 +62,23 @@ server.tool(
   },
   async ({ symbol, root, maxResults }) => handleTool(() => getSymbolContext(symbol, root, maxResults ?? 5)),
 );
+
+server.tool(
+  "get_project_commands",
+  "Return package scripts and likely test, lint, and dev commands from common project files.",
+  {
+    root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
+  },
+  async ({ root }) => handleTool(() => getProjectCommands(root)),
+);
+
+async function main() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error("[repo-context-mcp] ready on stdio");
+}
+
+main().catch((error) => {
+  console.error("[repo-context-mcp] failed to start:", error);
+  process.exit(1);
+});
