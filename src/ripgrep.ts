@@ -108,3 +108,54 @@ export function searchWithNode(options: RipgrepOptions): SearchMatch[] {
 
   return matches;
 }
+
+export function searchCode(options: RipgrepOptions): SearchMatch[] {
+  if (isRipgrepAvailable()) {
+    try {
+      return searchWithRipgrep(options);
+    } catch {
+      return searchWithNode(options);
+    }
+  }
+  return searchWithNode(options);
+}
+
+function parseRipgrepJson(output: string, root: string): SearchMatch[] {
+  const matches: SearchMatch[] = [];
+  const linesByFile = new Map<string, string[]>();
+
+  for (const line of output.split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    let parsed: { type?: string; data?: { path?: { text?: string }; line_number?: number; lines?: { text?: string } } };
+    try {
+      parsed = JSON.parse(line);
+    } catch {
+      continue;
+    }
+
+    if (parsed.type !== "match" || !parsed.data?.path?.text || !parsed.data.line_number) {
+      continue;
+    }
+
+    const absolutePath = parsed.data.path.text;
+    const relativePath = toRelativePath(root, absolutePath);
+     if (!linesByFile.has(absolutePath)) {
+      try {
+        linesByFile.set(absolutePath, fs.readFileSync(absolutePath, "utf8").split(/\r?\n/));
+      } catch {
+        linesByFile.set(absolutePath, []);
+      }
+    }
+
+    const fileLines = linesByFile.get(absolutePath) ?? [];
+    const lineIndex = parsed.data.line_number - 1;
+    matches.push({
+      filePath: relativePath,
+      lineNumber: parsed.data.line_number,
+      line: parsed.data.lines?.text?.replace(/\n$/, "") ?? fileLines[lineIndex] ?? "",
+      context: getContextLines(fileLines, lineIndex, 2),
+    });
+  }
+
+  return matches;
+}
