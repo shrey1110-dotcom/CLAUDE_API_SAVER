@@ -79,3 +79,15 @@ export const FRAMEWORK_HINTS: Record<string, string[]> = {
   flask: ["flask"],
   fastapi: ["fastapi"],
 };
+
+export const LANGUAGE_MARKERS: Record<string, string> = {
+  "package.json": "javascript/typescript",
+  "tsconfig.json": "typescript",
+  "pyproject.toml": "python",
+  "requirements.txt": "python",
+  "go.mod": "go",
+  "Cargo.toml": "rust",
+  Gemfile: "ruby",
+  "pom.xml": "java",
+  "build.gradle": "java/kotlin",
+};
