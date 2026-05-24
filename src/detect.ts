@@ -22,3 +22,25 @@ export function readJsonFile<T>(filePath: string): T | null {
   }
 }
 
+export function detectPackageManager(root: string): string | null {
+  for (const [file, manager] of Object.entries(LOCKFILES)) {
+    if (fs.existsSync(path.join(root, file))) {
+      return manager;
+    }
+  }
+  if (fs.existsSync(path.join(root, "package.json"))) {
+    return "npm";
+  }
+  return null;
+}
+
+export function detectLanguages(root: string): string[] {
+  const languages = new Set<string>();
+  for (const [marker, language] of Object.entries(LANGUAGE_MARKERS)) {
+    if (fs.existsSync(path.join(root, marker))) {
+      languages.add(language);
+    }
+  }
+  return [...languages];
+}
+
