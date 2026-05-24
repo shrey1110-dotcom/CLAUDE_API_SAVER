@@ -57,3 +57,54 @@ export function searchWithRipgrep(options: RipgrepOptions): SearchMatch[] {
 
   return parseRipgrepJson(result.stdout, options.root);
 }
+
+export function searchWithNode(options: RipgrepOptions): SearchMatch[] {
+  const matches: SearchMatch[] = [];
+  const searchRoot = options.filePath
+    ? path.dirname(resolveSafePath(options.root, options.filePath))
+    : options.root;
+
+  const files = options.filePath
+    ? [resolveSafePath(options.root, options.filePath)]
+    : walkFiles(searchRoot, options.root);
+
+  const regex = buildSearchRegex(options.query);
+
+  for (const filePath of files) {
+    if (matches.length >= options.maxResults) {
+      break;
+    }
+
+    let content: string;
+    try {
+      const stat = fs.statSync(filePath);
+      if (!stat.isFile() || stat.size > MAX_FILE_BYTES) {
+        continue;
+      }
+      content = fs.readFileSync(filePath, "utf8");
+    } catch {
+      continue;
+    }
+
+    if (content.includes("\0")) {
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i++) {
+      if (matches.length >= options.maxResults) {
+        break;
+      }
+      if (regex.test(lines[i])) {
+        matches.push({
+          filePath: toRelativePath(options.root, filePath),
+          lineNumber: i + 1,
+          line: lines[i],
+          context: getContextLines(lines, i, 2),
+        });
+      }
+    }
+  }
+
+  return matches;
+}
