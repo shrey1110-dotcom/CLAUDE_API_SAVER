@@ -83,3 +83,60 @@ export function readPackageScripts(root: string): Record<string, string> {
   return packageJson?.scripts ?? {};
 }
 
+export interface TreeEntry {
+  name: string;
+  type: "file" | "directory";
+  children?: TreeEntry[];
+}
+
+export function buildDirectoryTree(root: string, excludeDirs: Set<string>, maxDepth = 2): TreeEntry[] {
+  return listDirectory(root, root, excludeDirs, 0, maxDepth);
+}
+
+function listDirectory(
+  root: string,
+  currentDir: string,
+  excludeDirs: Set<string>,
+  depth: number,
+  maxDepth: number,
+): TreeEntry[] {
+  if (depth > maxDepth) {
+    return [];
+  }
+
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(currentDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  entries.sort((a, b) => {
+    if (a.isDirectory() && !b.isDirectory()) return -1;
+    if (!a.isDirectory() && b.isDirectory()) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const result: TreeEntry[] = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith(".") && entry.name !== ".env.example") {
+      continue;
+    }
+    if (entry.isDirectory() && excludeDirs.has(entry.name)) {
+      continue;
+    }
+
+    const entryPath = path.join(currentDir, entry.name);
+    if (entry.isDirectory()) {
+      result.push({
+        name: entry.name,
+        type: "directory",
+        children: listDirectory(root, entryPath, excludeDirs, depth + 1, maxDepth),
+      });
+    } else {
+      result.push({ name: entry.name, type: "file" });
+    }
+  }
+
+  return result;
+}
