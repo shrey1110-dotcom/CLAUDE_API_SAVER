@@ -51,3 +51,14 @@ server.tool(
   },
   async ({ filePath, root }) => handleTool(() => getFileOutline(filePath, root)),
 );
+
+server.tool(
+  "get_symbol_context",
+  "Find symbol definitions and return compact code blocks around them instead of whole files.",
+  {
+    symbol: z.string().describe("Function, class, or constant name to locate."),
+    root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
+    maxResults: z.number().int().positive().max(20).optional().describe("Maximum number of symbol matches."),
+  },
+  async ({ symbol, root, maxResults }) => handleTool(() => getSymbolContext(symbol, root, maxResults ?? 5)),
+);
