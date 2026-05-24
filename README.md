@@ -65,3 +65,38 @@ npm run dev
 
 3. Open Cursor Settings → MCP and enable `repo-context-mcp`.
 4. Rebuild after code changes (`npm run build`).
+
+## Tools
+
+### `repo_map`
+
+Returns a compact repository overview.
+
+**Input**
+
+- `root?` — project root (defaults to current working directory)
+
+**Output**
+
+- detected package manager
+- languages and frameworks
+- important config files
+- package scripts
+- top-level directory tree (excluding `node_modules`, `.git`, `dist`, `build`, `.next`, `coverage`)
+
+### `search_code`
+
+Search code and return precise matches with context.
+
+**Input**
+
+- `query` — search string or regex
+- `root?` — project root
+- `maxResults?` — default `20`
+
+**Output**
+
+- file path
+- line number
+- matching line
+- 2 lines before and after the match
