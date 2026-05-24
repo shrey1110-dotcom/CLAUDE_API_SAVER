@@ -100,3 +100,51 @@ Search code and return precise matches with context.
 - line number
 - matching line
 - 2 lines before and after the match
+
+### `get_file_outline`
+
+Return a lightweight outline for one file.
+
+**Input**
+
+- `filePath` — path relative to root
+- `root?` — project root
+
+**Output**
+
+- imports
+- exported functions/classes/constants
+- top-level functions/classes
+
+### `get_symbol_context`
+
+Find a symbol and return compact code blocks around its definition.
+
+**Input**
+
+- `symbol` — function, class, or constant name
+- `root?` — project root
+- `maxResults?` — default `5`
+
+**Output**
+
+- matching file paths
+- symbol line number
+- compact code block around the definition
+
+### `get_project_commands`
+
+Return runnable project commands.
+
+**Input**
+
+- `root?` — project root
+
+**Output**
+
+- package scripts
+- likely test command
+- likely lint command
+- likely dev command
+
+Reads `package.json`, `pyproject.toml`, `Makefile`, `Cargo.toml`, and `go.mod` when present.
