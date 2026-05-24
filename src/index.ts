@@ -21,3 +21,12 @@ function handleTool<T>(handler: () => T) {
     return toolError(message);
   }
 }
+
+server.tool(
+  "repo_map",
+  "Return a compact map of the repository: package manager, languages, frameworks, config files, scripts, and top-level tree.",
+  {
+    root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
+  },
+  async ({ root }) => handleTool(() => repoMap(root)),
+);
