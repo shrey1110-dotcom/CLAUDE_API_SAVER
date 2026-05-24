@@ -159,3 +159,64 @@ function parseRipgrepJson(output: string, root: string): SearchMatch[] {
 
   return matches;
 }
+
+function walkFiles(currentDir: string, root: string, files: string[] = []): string[] {
+  if (files.length >= MAX_WALK_FILES) {
+    return files;
+  }
+
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(currentDir, { withFileTypes: true });
+  } catch {
+    return files;
+  }
+
+  for (const entry of entries) {
+    if (files.length >= MAX_WALK_FILES) {
+      break;
+    }
+    if (entry.isDirectory()) {
+      if (EXCLUDE_DIRS.has(entry.name) || entry.name.startsWith(".")) {
+        continue;
+      }
+      walkFiles(path.join(currentDir, entry.name), root, files);
+    } else if (entry.isFile()) {
+      files.push(path.join(currentDir, entry.name));
+    }
+  }
+
+  return files;
+}
+
+function buildSearchRegex(query: string): RegExp {
+  try {
+    return new RegExp(query);
+  } catch {
+    return new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  }
+}
+
+export function getContextLines(lines: string[], lineIndex: number, padding: number): string[] {
+  const start = Math.max(0, lineIndex - padding);
+  const end = Math.min(lines.length - 1, lineIndex + padding);
+  const context: string[] = [];
+  for (let i = start; i <= end; i++) {
+    context.push(`${i + 1}: ${lines[i]}`);
+  }
+  return context;
+}
+
+export function buildSymbolPatterns(symbol: string): string[] {
+  const escaped = symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return [
+    `function\\s+${escaped}\\b`,
+    `class\\s+${escaped}\\b`,
+    `(?:const|let|var)\\s+${escaped}\\b`,
+    `def\\s+${escaped}\\b`,
+    `async\\s+function\\s+${escaped}\\b`,
+    `export\\s+(?:async\\s+)?function\\s+${escaped}\\b`,
+    `export\\s+class\\s+${escaped}\\b`,
+    `export\\s+(?:const|let|var)\\s+${escaped}\\b`,
+  ];
+}
