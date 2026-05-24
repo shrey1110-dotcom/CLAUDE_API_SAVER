@@ -160,3 +160,9 @@ Reads `package.json`, `pyproject.toml`, `Makefile`, `Cargo.toml`, and `go.mod` w
 
 MIT
 
+
+## Quick start
+
+1. `npm install`
+2. `npm run build`
+3. Enable the MCP server in Cursor
