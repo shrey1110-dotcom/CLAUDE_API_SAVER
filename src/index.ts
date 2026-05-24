@@ -30,3 +30,14 @@ server.tool(
   },
   async ({ root }) => handleTool(() => repoMap(root)),
 );
+
+server.tool(
+  "search_code",
+  "Search code with ripgrep when available, otherwise a Node fallback. Returns file path, line number, and nearby context.",
+  {
+    query: z.string().describe("Search query (regex when supported)."),
+    root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
+    maxResults: z.number().int().positive().max(100).optional().describe("Maximum number of matches to return."),
+  },
+  async ({ query, root, maxResults }) => handleTool(() => searchCodeTool(query, root, maxResults ?? 20)),
+);
