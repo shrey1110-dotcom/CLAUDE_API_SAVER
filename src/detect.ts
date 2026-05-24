@@ -44,3 +44,42 @@ export function detectLanguages(root: string): string[] {
   return [...languages];
 }
 
+export function detectFrameworks(root: string): string[] {
+  const frameworks = new Set<string>();
+  const packageJson = readJsonFile<PackageJson>(path.join(root, "package.json"));
+  const deps = {
+    ...(packageJson?.dependencies ?? {}),
+    ...(packageJson?.devDependencies ?? {}),
+  };
+
+  for (const [framework, packages] of Object.entries(FRAMEWORK_HINTS)) {
+    if (packages.some((pkg) => pkg in deps)) {
+      frameworks.add(framework);
+    }
+  }
+
+  if (fs.existsSync(path.join(root, "next.config.js")) || fs.existsSync(path.join(root, "next.config.ts"))) {
+    frameworks.add("next");
+  }
+  if (fs.existsSync(path.join(root, "vite.config.ts")) || fs.existsSync(path.join(root, "vite.config.js"))) {
+    frameworks.add("vite");
+  }
+
+  return [...frameworks];
+}
+
+export function findImportantConfigFiles(root: string): string[] {
+  const found: string[] = [];
+  for (const file of IMPORTANT_CONFIG_FILES) {
+    if (fs.existsSync(path.join(root, file))) {
+      found.push(file);
+    }
+  }
+  return found;
+}
+
+export function readPackageScripts(root: string): Record<string, string> {
+  const packageJson = readJsonFile<PackageJson>(path.join(root, "package.json"));
+  return packageJson?.scripts ?? {};
+}
+
