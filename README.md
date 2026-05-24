@@ -8,3 +8,34 @@ A local, read-only MCP server that helps Cursor and Codex use less context by re
 - **Path sandboxing** — never reads outside the configured project root
 - **Output caps** — tool responses are capped at about 30KB
 - **Fast search** — uses ripgrep (`rg`) when available, with a Node fallback
+
+## Requirements
+
+- Node.js 18+
+- Optional: [ripgrep](https://github.com/BurntSushi/ripgrep) installed and available on `PATH`
+
+## Install
+
+```bash
+npm install
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+## Run
+
+```bash
+npm start
+```
+
+The server communicates over stdio. Logs are written to stderr only.
+
+## Development
+
+```bash
+npm run dev
+```
