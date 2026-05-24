@@ -39,3 +39,29 @@ The server communicates over stdio. Logs are written to stderr only.
 ```bash
 npm run dev
 ```
+
+## Cursor MCP setup
+
+1. Build the server:
+
+   ```bash
+   npm install
+   npm run build
+   ```
+
+2. This repo includes an example config at [`.cursor/mcp.json`](.cursor/mcp.json):
+
+   ```json
+   {
+     "mcpServers": {
+       "repo-context-mcp": {
+         "type": "stdio",
+         "command": "node",
+         "args": ["${workspaceFolder}/dist/index.js"]
+       }
+     }
+   }
+   ```
+
+3. Open Cursor Settings → MCP and enable `repo-context-mcp`.
+4. Rebuild after code changes (`npm run build`).
