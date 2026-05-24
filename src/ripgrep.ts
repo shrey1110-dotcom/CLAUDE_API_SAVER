@@ -22,3 +22,38 @@ export function isRipgrepAvailable(): boolean {
   const result = spawnSync("rg", ["--version"], { encoding: "utf8" });
   return result.status === 0;
 }
+
+export function searchWithRipgrep(options: RipgrepOptions): SearchMatch[] {
+  const args = [
+    "--json",
+    "-n",
+    "--max-count",
+    String(options.maxResults),
+    "--glob",
+    "!.git/*",
+    ...[...EXCLUDE_DIRS].flatMap((dir) => ["--glob", `!${dir}/**`]),
+  ];
+
+  if (options.filePath) {
+    args.push(resolveSafePath(options.root, options.filePath));
+  } else {
+    args.push(options.root);
+  }
+
+  args.push("--", options.query);
+
+  const result = spawnSync("rg", args, {
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0 && result.status !== 1) {
+    throw new Error(result.stderr || `ripgrep failed with exit code ${result.status}`);
+  }
+
+  return parseRipgrepJson(result.stdout, options.root);
+}
