@@ -62,3 +62,20 @@ export const LOCKFILES: Record<string, string> = {
   "uv.lock": "uv",
   "Gemfile.lock": "bundler",
 };
+
+export const FRAMEWORK_HINTS: Record<string, string[]> = {
+  next: ["next"],
+  react: ["react"],
+  vue: ["vue"],
+  nuxt: ["nuxt"],
+  svelte: ["svelte", "@sveltejs/kit"],
+  angular: ["@angular/core"],
+  express: ["express"],
+  fastify: ["fastify"],
+  nestjs: ["@nestjs/core"],
+  vite: ["vite"],
+  tailwind: ["tailwindcss"],
+  django: ["django"],
+  flask: ["flask"],
+  fastapi: ["fastapi"],
+};
