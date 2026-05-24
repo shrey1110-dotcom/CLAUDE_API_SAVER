@@ -41,3 +41,13 @@ server.tool(
   },
   async ({ query, root, maxResults }) => handleTool(() => searchCodeTool(query, root, maxResults ?? 20)),
 );
+
+server.tool(
+  "get_file_outline",
+  "Return a lightweight outline for a file: imports, exports, and top-level symbols.",
+  {
+    filePath: z.string().describe("Path to the file, relative to root or absolute within root."),
+    root: z.string().optional().describe("Project root directory. Defaults to current working directory."),
+  },
+  async ({ filePath, root }) => handleTool(() => getFileOutline(filePath, root)),
+);
