@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "repo-context-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/index.js"]
+    }
+  }
+}
