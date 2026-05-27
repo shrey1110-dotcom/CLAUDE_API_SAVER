@@ -1,13 +1,16 @@
 {
   "name": "repo-context-mcp",
-  "version": "1.0.0",
-  "description": "Read-only MCP server that returns small, precise repo information",
+  "version": "2.0.0",
+  "description": "Universal MCP context broker with local knowledge graph for coding agents",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "graph:build": "node dist/graph/buildGraph.js",
+    "context:build": "node dist/context/buildContext.js",
+    "telemetry:clean": "node dist/scripts/cleanTelemetry.js",
     "telemetry:summary": "node dist/telemetry/summary.js",
     "telemetry:report": "node dist/telemetry/report.js",
     "telemetry:test": "node dist/telemetry/test.js",
@@ -16,9 +19,15 @@
     "test:edge": "vitest run tests/edge.test.ts",
     "test:security": "vitest run tests/security.test.ts",
     "test:benchmark": "vitest run tests/budget.test.ts",
-    "test:all": "npm run build && npm run test && npm run test:edge && npm run test:security && npm run test:benchmark && npm run benchmark:compact && npm run validate && npm run benchmark:workflow && npm run deep-test:report",
+    "test:graph": "vitest run tests/graph.test.ts",
+    "test:context": "vitest run tests/context.test.ts",
+    "test:client": "vitest run tests/clientAgnostic.test.ts",
+    "test:all": "npm run build && npm run test && npm run test:edge && npm run test:security && npm run test:benchmark && npm run test:graph && npm run test:context && npm run test:client && npm run benchmark:compact && npm run validate && npm run graph:build && npm run context:build && npm run benchmark:workflow && npm run benchmark:graph && npm run benchmark:context && npm run compat:report && npm run deep-test:report",
     "benchmark:compact": "node dist/benchmark/compact.js",
     "benchmark:workflow": "node dist/benchmark/workflow.js",
+    "benchmark:graph": "node dist/benchmark/graph.js",
+    "benchmark:context": "node dist/benchmark/context.js",
+    "compat:report": "node dist/scripts/compatReport.js",
     "deep-test:report": "node dist/scripts/generateDeepTestReport.js"
   },
   "engines": {
@@ -43,7 +52,10 @@
     "mcp",
     "model-context-protocol",
     "cursor",
+    "codex",
+    "claude",
     "repo-context",
+    "knowledge-graph",
     "typescript"
   ]
 }
