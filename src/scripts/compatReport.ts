@@ -58,6 +58,8 @@ function scriptStatus(scripts: string[]): string {
     .join("\n");
 }
 
+const PKG = JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")) as { version: string };
+
 function main(): void {
   const config = getConfig();
   const graph = getGraphStatus();
@@ -71,7 +73,7 @@ Generated: ${new Date().toISOString()}
 ## Server
 
 - Name: repo-context-mcp
-- Version: 2.0.0
+- Version: ${PKG.version}
 - Transport: stdio
 
 ## Tools exposed (${EXPOSED_TOOLS.length})

@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run graph:build
+      - run: npm run context:build
+      - run: npm run test
+      - run: npm run test:edge
+      - run: npm run test:security
+      - run: npm run test:benchmark
+      - run: npm run test:graph
+      - run: npm run test:context
+      - run: npm run test:client
+      - run: npm run benchmark:context
+      - run: npm run compat:report
+      - run: npm run doctor
+      - run: npm run smoke:mcp
+      - run: npm run release:check

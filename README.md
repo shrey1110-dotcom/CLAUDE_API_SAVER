@@ -1,55 +1,78 @@
-# repo-context-mcp: Universal MCP Context Broker for Coding Agents
+# repo-context-mcp
 
-A local, read-only MCP server with a knowledge graph and context broker so agents can request the smallest useful context package instead of repeatedly searching and reading full files.
+**Universal MCP context broker for coding agents** — compact repo graph, context packs, and optional telemetry.
 
-**Supported clients:** Cursor, OpenAI Codex, Claude Code, Claude Desktop, and any generic stdio MCP client.
+Works with **Cursor**, **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
 
-Do not assume token savings until you complete per-client A/B testing ([docs/multi-client-ab-tests.md](docs/multi-client-ab-tests.md)).
+## What this is
 
-## Features
+A local, read-only MCP server that builds a small knowledge graph and topic capsules offline, then answers agent requests with **compact context packages** instead of full file dumps.
 
-- **Context broker** — `context_pack` and `impact_pack` return compact file/symbol/command packages
-- **Local knowledge graph** — built offline under `.repo-context-graph/`
-- **Read-only MCP tools** — no write/edit/delete or unrestricted shell tools
-- **Compact output modes** — aggressive caps and minified JSON in compact mode
-- **Telemetry** — optional logging to `.mcp-telemetry/`
-- **Universal** — stdio transport; not Cursor-specific
+## What problem it solves
+
+Agents often waste context on repeated `repo_map` / search / full-file reads. repo-context-mcp lets agents call **`context_pack`** once with a task description and a token budget, then drill down only when needed.
+
+## How it works
+
+1. **Build** (npm scripts): scan the repo → `.repo-context-graph/graph.json` + capsules  
+2. **Serve** (stdio MCP): agents call `context_status` → `context_pack` → fallbacks  
+3. **Measure** (optional): `MCP_TELEMETRY=1` logs tool output sizes locally  
+
+MCP tools never write source code. Only local cache/telemetry files are written by npm scripts.
 
 ## Quick start
 
 ```bash
+git clone https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git
+cd CLAUDE_API_SAVER   # or your fork path
 npm install
 npm run build
 npm run graph:build
 npm run context:build
-npm start
+npm run doctor
+npm run benchmark:context
 ```
 
-## Recommended agent workflow
+## Build graph and context
 
-1. Build graph once: `npm run graph:build`
-2. Build context capsules: `npm run context:build`
-3. Agents call `context_pack` first
-4. Use graph tools only if `context_pack` is insufficient
-5. Use `search_code` / `repo_map` only when graph/context is missing
-6. Read full files only as a last resort
+Run in the repository you want indexed (usually the project root):
 
-## MCP tools (v2)
+```bash
+npm run graph:build
+npm run context:build
+```
 
-| Tool | Priority | Purpose |
-| --- | --- | --- |
-| `context_status` | High | Check graph/capsule index |
-| `context_pack` | **Primary** | Smallest useful context for a task |
-| `impact_pack` | High | Dependents/tests/commands for changes |
-| `graph_status` | Medium | Graph index metadata |
-| `graph_query` | Medium | Search the knowledge graph |
-| `graph_symbol` | Medium | Symbol lookup in the graph |
-| `graph_neighbors` | Low | Expand neighbors |
-| `graph_paths` | Low | Short paths between nodes |
-| `get_symbol_context` | Fallback | Exact code snippets |
-| `get_project_commands` | Fallback | Scripts and likely commands |
-| `search_code` | Fallback | Ripgrep search |
-| `repo_map` | Fallback | Tree and project metadata |
+Re-run after large refactors.
+
+## Add to an MCP client
+
+1. Point the client at `dist/index.js` (or `repo-context-mcp` after `npm link`).  
+2. Set the compact env block (see [examples/cursor/mcp.json](examples/cursor/mcp.json)).  
+3. Reload MCP in the client.
+
+Client guides: [docs/client-configs/](docs/client-configs/)
+
+## Recommended agent instructions
+
+Give your agent this policy (also in [docs/agent-instructions/AGENTS.md](docs/agent-instructions/AGENTS.md)):
+
+```text
+Use repo-context-mcp as a context broker. First call context_status, then context_pack with budgetTokens 1000. Use full file reads only when exact implementation verification is needed.
+```
+
+**Tool order:** `context_status` → `context_pack` → `impact_pack` (for diffs) → `graph_query` / `graph_symbol` → `get_symbol_context` → `search_code` / `repo_map`
+
+## MCP tools
+
+| Tool | When to use |
+| --- | --- |
+| `context_pack` | **First** — task-specific files, symbols, commands |
+| `impact_pack` | Changed files / diff impact |
+| `context_status` | Check if index exists |
+| `graph_query` | Fallback if `context_pack` is not enough |
+| `graph_symbol` | Fallback symbol lookup |
+| `get_symbol_context` | Exact code snippets |
+| `search_code` / `repo_map` | Index missing or last resort |
 
 ## Environment (compact defaults)
 
@@ -64,56 +87,79 @@ npm start
 }
 ```
 
-## Scripts
+## CLI
+
+After `npm run build`:
 
 ```bash
-npm run build
-npm run graph:build
-npm run context:build
-npm run benchmark:graph
-npm run benchmark:context
-npm run benchmark:workflow
-npm run compat:report
-npm run test:all
-npm run telemetry:report
+npm start
+# or
+npx repo-context-mcp   # when linked or installed
 ```
 
-## Client setup
+## Benchmarks
 
-- [Cursor](docs/client-configs/cursor.md)
-- [Codex](docs/client-configs/codex.md)
-- [Claude Code](docs/client-configs/claude-code.md)
-- [Claude Desktop](docs/client-configs/claude-desktop.md)
-- [Generic stdio](docs/client-configs/generic-stdio.md)
+```bash
+npm run benchmark:context   # recommended path (~668 MCP tokens in reference repo)
+npm run benchmark:graph
+npm run benchmark:workflow
+```
 
-Examples: [examples/](examples/)
-
-Agent policy: [docs/agent-instructions/AGENTS.md](docs/agent-instructions/AGENTS.md)
-
-## Graph cache
-
-Written by npm scripts only (not MCP tools):
-
-- `.repo-context-graph/graph.json`
-- `.repo-context-graph/manifest.json`
-- `.repo-context-graph/capsules.json`
-- `.repo-context-graph/context-manifest.json`
+See [docs/benchmarks.md](docs/benchmarks.md). Benchmarks measure **MCP output size**, not client billing.
 
 ## Telemetry
 
-Set `MCP_TELEMETRY=1` on the MCP server process. Reports go to `.mcp-telemetry/`.
-
 ```bash
-npm run telemetry:clean   # before a measured MCP session
+export MCP_TELEMETRY=1   # in MCP server env
+npm run telemetry:clean  # before a measured session
 npm run telemetry:report
 ```
 
-## Testing
+## Safety
+
+Read-only MCP tools; local cache only. Details: [docs/safety.md](docs/safety.md)
+
+## Supported clients
+
+| Client | Doc |
+| --- | --- |
+| Cursor | [docs/client-configs/cursor.md](docs/client-configs/cursor.md) |
+| Codex | [docs/client-configs/codex.md](docs/client-configs/codex.md) |
+| Claude Code | [docs/client-configs/claude-code.md](docs/client-configs/claude-code.md) |
+| Claude Desktop | [docs/client-configs/claude-desktop.md](docs/client-configs/claude-desktop.md) |
+| Generic stdio | [docs/client-configs/generic-stdio.md](docs/client-configs/generic-stdio.md) |
+
+Setup checklist: [docs/setup-checklist.md](docs/setup-checklist.md)
+
+## Limitations
+
+- Heuristic graph (not a typechecker)  
+- No embeddings or LLM summaries in v0.1.0  
+- No guaranteed token savings without per-client A/B tests  
+
+## Measuring real savings
+
+Use [docs/multi-client-ab-tests.md](docs/multi-client-ab-tests.md) and [docs/ab-test-templates/](docs/ab-test-templates/).
+
+```text
+client_total_with_mcp + MCP_estimated_output_tokens < client_total_without_mcp
+```
+
+Quality must be equal or better.
+
+## Development
 
 ```bash
+npm run dev
 npm run test:all
+npm run doctor
+npm run smoke:mcp
+npm run release:check
+npm run compat:report
 ```
+
+Product overview: [docs/product.md](docs/product.md) · Changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)

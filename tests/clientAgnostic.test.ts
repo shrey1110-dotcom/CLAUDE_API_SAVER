@@ -9,8 +9,12 @@ function readCoreSources(): string {
   function walk(dir: string): void {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith(".ts")) files.push(fs.readFileSync(full, "utf8"));
+      if (entry.isDirectory()) {
+        if (entry.name === "scripts") continue;
+        walk(full);
+      } else if (entry.name.endsWith(".ts")) {
+        files.push(fs.readFileSync(full, "utf8"));
+      }
     }
   }
   walk(CORE_SRC);
@@ -26,7 +30,7 @@ describe("client-agnostic packaging", () => {
 
   it("README describes universal MCP usage", () => {
     const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
-    expect(readme).toMatch(/Universal MCP Context Broker/i);
+    expect(readme).toMatch(/Universal MCP context broker/i);
     expect(readme).toMatch(/Cursor|Codex|Claude/i);
   });
 

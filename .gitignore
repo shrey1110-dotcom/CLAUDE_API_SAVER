@@ -4,3 +4,4 @@ dist/
 .DS_Store
 .mcp-telemetry/
 .repo-context-graph/
+tests/fixtures/**/.repo-context-graph/

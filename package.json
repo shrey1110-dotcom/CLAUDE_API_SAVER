@@ -1,9 +1,20 @@
 {
   "name": "repo-context-mcp",
-  "version": "2.0.0",
-  "description": "Universal MCP context broker with local knowledge graph for coding agents",
+  "version": "0.1.0",
+  "description": "Universal MCP context broker for coding agents with compact repo graph, context packs, and telemetry.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "repo-context-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "docs",
+    "examples",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
@@ -14,6 +25,9 @@
     "telemetry:summary": "node dist/telemetry/summary.js",
     "telemetry:report": "node dist/telemetry/report.js",
     "telemetry:test": "node dist/telemetry/test.js",
+    "doctor": "node dist/scripts/doctor.js",
+    "smoke:mcp": "node dist/scripts/smokeMcp.js",
+    "release:check": "node dist/scripts/releaseCheck.js",
     "validate": "npm run build && npm run telemetry:test && npm run telemetry:summary && npm run telemetry:report",
     "test": "vitest run tests/tools.test.ts tests/telemetry.test.ts",
     "test:edge": "vitest run tests/edge.test.ts",
@@ -46,16 +60,17 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git"
+    "url": "git+https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "cursor",
     "codex",
     "claude",
-    "repo-context",
+    "cursor",
+    "ai-coding",
+    "context",
     "knowledge-graph",
-    "typescript"
+    "repository-analysis"
   ]
 }

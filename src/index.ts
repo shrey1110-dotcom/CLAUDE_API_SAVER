@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -19,7 +20,7 @@ import { searchCodeTool } from "./tools/searchCode.js";
 
 const server = new McpServer({
   name: "repo-context-mcp",
-  version: "2.0.0",
+  version: "0.1.0",
 });
 
 async function handleTool<T>(
@@ -39,14 +40,14 @@ async function handleTool<T>(
 
 server.tool(
   "context_status",
-  "Check whether the local knowledge graph and context capsules exist. Use first when unsure if the index is built.",
+  "Check graph and context index status. Call first when unsure the repo is indexed. Suggests npm run graph:build / context:build if missing.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("context_status", { root }, () => getContextStatus(root)),
 );
 
 server.tool(
   "context_pack",
-  "Primary context broker: return the smallest useful file/symbol/command package for a task. Prefer this over broad search or file reads.",
+  "PREFERRED FIRST TOOL. Returns the smallest useful file/symbol/command package for a task within budgetTokens. Use before graph_query, search_code, repo_map, or full file reads.",
   {
     task: z.string(),
     root: z.string().optional(),
@@ -61,7 +62,7 @@ server.tool(
 
 server.tool(
   "impact_pack",
-  "Analyze changed files and return likely dependents, tests, commands, and risk. Use when editing or reviewing diffs.",
+  "For changed files or diffs: likely dependents, related tests, commands, and risk level. Use when editing or reviewing changes—not for initial discovery (use context_pack first).",
   {
     changedFiles: z.array(z.string()).optional(),
     root: z.string().optional(),
@@ -82,7 +83,7 @@ server.tool(
 
 server.tool(
   "graph_query",
-  "Query the local knowledge graph. Use only when context_pack is insufficient.",
+  "FALLBACK: query the local knowledge graph when context_pack did not return enough. Not the preferred first tool.",
   {
     query: z.string(),
     root: z.string().optional(),
@@ -97,7 +98,7 @@ server.tool(
 
 server.tool(
   "graph_symbol",
-  "Find a symbol in the knowledge graph with neighbors and related tests/configs. No full source code.",
+  "FALLBACK: find a symbol in the knowledge graph (path, line, neighbors). Use when context_pack is insufficient. No full file bodies.",
   {
     symbol: z.string(),
     root: z.string().optional(),
@@ -143,7 +144,7 @@ server.tool(
 
 server.tool(
   "get_symbol_context",
-  "Exact symbol code snippets. Use only when context_pack or graph_symbol need implementation verification.",
+  "Exact symbol-level code snippets (compact). Use only when context_pack/graph_symbol are insufficient and you must verify implementation details.",
   {
     symbol: z.string(),
     root: z.string().optional(),
@@ -166,7 +167,7 @@ server.tool(
 
 server.tool(
   "search_code",
-  "Ripgrep/code search fallback when context_pack and graph_query are insufficient.",
+  "FALLBACK ONLY: ripgrep search when context_pack and graph_query are insufficient. Prefer context_pack first.",
   {
     query: z.string(),
     root: z.string().optional(),
@@ -180,7 +181,7 @@ server.tool(
 
 server.tool(
   "repo_map",
-  "Compact repo tree and metadata fallback when graph/context index is missing.",
+  "FALLBACK ONLY: compact repo tree and scripts when graph/context index is missing. Prefer context_pack when indexed.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("repo_map", { root }, () => repoMap(root)),
 );
@@ -188,7 +189,7 @@ server.tool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[repo-context-mcp] ready on stdio (context broker v2)");
+  console.error("[repo-context-mcp] ready on stdio v0.1.0");
 }
 
 main().catch((error) => {
