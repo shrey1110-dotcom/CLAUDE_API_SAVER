@@ -6,6 +6,7 @@ export const EXCLUDE_DIRS = new Set([
   ".next",
   "coverage",
   ".mcp-telemetry",
+  ".repo-context-graph",
 ]);
 
 export const TREE_EXCLUDE_DIRS = new Set([...EXCLUDE_DIRS, ".cursor"]);

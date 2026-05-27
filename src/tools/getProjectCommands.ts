@@ -10,7 +10,7 @@ interface CommandResult {
   likelyLint: string | null;
   likelyDev: string | null;
   likelyInstall: string | null;
-  sources: string[];
+  sources?: string[];
 }
 
 export function getProjectCommands(root?: string): CommandResult {
@@ -61,26 +61,24 @@ export function getProjectCommands(root?: string): CommandResult {
     addIfMissing(scripts, "dev", "go run .");
   }
 
-  const result = {
-    scripts: isCompactMode() ? Object.keys(scripts) : scripts,
+  if (isCompactMode()) {
+    return {
+      scripts: Object.keys(scripts),
+      likelyTest: pickLikelyScriptName(scripts, ["test", "test:unit", "test:ci", "pytest"]),
+      likelyLint: pickLikelyScriptName(scripts, ["lint", "lint:fix", "eslint", "ruff", "clippy"]),
+      likelyDev: pickLikelyScriptName(scripts, ["dev", "start:dev", "serve", "develop", "start"]),
+      likelyInstall: pickLikelyScriptName(scripts, ["install", "ci", "prepare"]) ?? inferInstallScriptName(resolvedRoot),
+    };
+  }
+
+  return {
+    scripts,
     likelyTest: pickLikelyCommand(scripts, ["test", "test:unit", "test:ci", "pytest"]),
     likelyLint: pickLikelyCommand(scripts, ["lint", "lint:fix", "eslint", "ruff", "clippy"]),
     likelyDev: pickLikelyCommand(scripts, ["dev", "start:dev", "serve", "develop", "start"]),
     likelyInstall: pickLikelyCommand(scripts, ["install", "ci", "prepare"]) ?? inferInstallCommand(resolvedRoot),
     sources,
   };
-
-  if (isCompactMode()) {
-    return {
-      ...result,
-      likelyTest: result.likelyTest ? result.likelyTest.split(":")[0] : null,
-      likelyLint: result.likelyLint ? result.likelyLint.split(":")[0] : null,
-      likelyDev: result.likelyDev ? result.likelyDev.split(":")[0] : null,
-      likelyInstall: result.likelyInstall,
-    };
-  }
-
-  return result;
 }
 
 function inferInstallCommand(root: string): string | null {
@@ -98,6 +96,28 @@ function addIfMissing(scripts: Record<string, string>, key: string, value: strin
   if (value && !(key in scripts)) {
     scripts[key] = value;
   }
+}
+
+function pickLikelyScriptName(scripts: Record<string, string>, candidates: string[]): string | null {
+  for (const candidate of candidates) {
+    if (scripts[candidate]) {
+      return candidate;
+    }
+  }
+
+  const fuzzy = Object.keys(scripts).find((name) => candidates.some((candidate) => name.includes(candidate)));
+  return fuzzy ?? null;
+}
+
+function inferInstallScriptName(root: string): string | null {
+  const manager = ["pnpm-lock.yaml", "yarn.lock", "package-lock.json", "bun.lockb"].find((file) =>
+    fs.existsSync(path.join(root, file)),
+  );
+  if (manager?.startsWith("pnpm")) return "install";
+  if (manager === "yarn.lock") return "install";
+  if (manager === "bun.lockb") return "install";
+  if (fs.existsSync(path.join(root, "package.json"))) return "install";
+  return null;
 }
 
 function pickLikelyCommand(scripts: Record<string, string>, candidates: string[]): string | null {

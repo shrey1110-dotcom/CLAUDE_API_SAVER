@@ -14,7 +14,13 @@ export interface FileOutline {
   imports: string[] | OutlineSymbol[];
   exports: string[] | OutlineSymbol[];
   topLevel: string[] | OutlineSymbol[];
+  importsTotal?: number;
+  symbolsTotal?: number;
+  truncated?: boolean;
 }
+
+const COMPACT_IMPORT_LIMIT = 20;
+const COMPACT_SYMBOL_LIMIT = 40;
 
 const IMPORT_FROM = /from\s+['"]([^'"]+)['"]/;
 const IMPORT_SIDE = /^import\s+['"]([^'"]+)['"]/;
@@ -104,13 +110,33 @@ export function getFileOutline(filePath: string, root?: string): FileOutline {
     }
   }
 
-  const toList = (map: Map<string, OutlineSymbol>) => {
-    const values = [...map.values()].slice(0, 100);
-    if (compact) {
-      return values;
-    }
-    return values.map((item) => `${item.name} (${item.kind}, line ${item.line})`);
-  };
+  const importValues = [...imports.values()];
+  const exportValues = [...exports.values()];
+  const topLevelValues = [...topLevel.values()];
+  const symbolsTotal = exportValues.length + topLevelValues.length;
+
+  if (compact) {
+    const cappedImports = importValues.slice(0, COMPACT_IMPORT_LIMIT).map((item) => item.name);
+    const symbolBudget = COMPACT_SYMBOL_LIMIT;
+    const cappedExports = exportValues.slice(0, symbolBudget);
+    const remaining = Math.max(0, symbolBudget - cappedExports.length);
+    const cappedTopLevel = topLevelValues.slice(0, remaining);
+
+    return {
+      filePath: toRelativePath(resolvedRoot, resolvedPath),
+      imports: cappedImports,
+      exports: cappedExports,
+      topLevel: cappedTopLevel,
+      importsTotal: importValues.length,
+      symbolsTotal,
+      truncated:
+        importValues.length > COMPACT_IMPORT_LIMIT ||
+        exportValues.length + topLevelValues.length > COMPACT_SYMBOL_LIMIT,
+    };
+  }
+
+  const toList = (map: Map<string, OutlineSymbol>) =>
+    [...map.values()].slice(0, 100).map((item) => `${item.name} (${item.kind}, line ${item.line})`);
 
   return {
     filePath: toRelativePath(resolvedRoot, resolvedPath),

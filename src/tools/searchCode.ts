@@ -1,4 +1,4 @@
-import { getConfig } from "../config.js";
+import { getConfig, isCompactMode } from "../config.js";
 import { searchCode } from "../ripgrep.js";
 import { resolveRoot } from "../pathSafety.js";
 
@@ -9,27 +9,47 @@ export function searchCodeTool(query: string, root?: string, maxResults?: number
 
   const config = getConfig();
   const resolvedRoot = resolveRoot(root);
-  const limit = maxResults ?? config.defaultSearchResults;
+  const requested = maxResults ?? config.defaultSearchResults;
+  const limit = isCompactMode() ? Math.min(requested, config.maxCompactSearchResults) : requested;
+  const padding = config.searchContextPadding;
+
   const matches = searchCode({
     root: resolvedRoot,
     query,
     maxResults: limit,
-    contextPadding: config.searchContextPadding,
+    contextPadding: padding,
   });
 
-  const capped = matches.length >= limit;
+  const resultTruncated = matches.length >= limit;
+  const compact = isCompactMode();
 
   return {
-    root: resolvedRoot,
+    ...(compact ? {} : { root: resolvedRoot }),
     query,
     matchCount: matches.length,
     maxResults: limit,
-    truncated: capped,
-    matches: matches.map((match) => ({
-      filePath: match.filePath,
-      lineNumber: match.lineNumber,
-      line: match.line,
-      context: match.context,
-    })),
+    resultTruncated,
+    truncated: resultTruncated,
+    matches: matches.map((match) => {
+      const entry: {
+        filePath: string;
+        lineNumber: number;
+        line: string;
+        context?: string[];
+      } = {
+        filePath: match.filePath,
+        lineNumber: match.lineNumber,
+        line: match.line.trimEnd(),
+      };
+
+      if (!compact || padding > 0) {
+        entry.context =
+          padding === 0
+            ? [`${match.lineNumber}: ${match.line.trimEnd()}`]
+            : match.context;
+      }
+
+      return entry;
+    }),
   };
 }

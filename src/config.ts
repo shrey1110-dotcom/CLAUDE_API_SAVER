@@ -4,18 +4,37 @@ export interface McpConfig {
   outputMode: OutputMode;
   maxResponseChars: number;
   defaultSearchResults: number;
+  maxCompactSearchResults: number;
+  defaultSymbolResults: number;
   treeDepth: number;
   symbolContextLines: number;
   searchContextPadding: number;
+  searchContextLines: number;
+  maxTreeEntriesPerDir: number;
 }
 
-const DEFAULTS: McpConfig = {
-  outputMode: "compact",
+const COMPACT_DEFAULTS: Omit<McpConfig, "outputMode"> = {
+  maxResponseChars: 9000,
+  defaultSearchResults: 5,
+  maxCompactSearchResults: 10,
+  defaultSymbolResults: 3,
+  treeDepth: 2,
+  symbolContextLines: 14,
+  searchContextPadding: 0,
+  searchContextLines: 0,
+  maxTreeEntriesPerDir: 6,
+};
+
+const NORMAL_DEFAULTS: Omit<McpConfig, "outputMode"> = {
   maxResponseChars: 30_720,
   defaultSearchResults: 8,
-  treeDepth: 2,
+  maxCompactSearchResults: 100,
+  defaultSymbolResults: 5,
+  treeDepth: 3,
   symbolContextLines: 20,
   searchContextPadding: 1,
+  searchContextLines: 1,
+  maxTreeEntriesPerDir: 12,
 };
 
 let cached: McpConfig | null = null;
@@ -44,20 +63,48 @@ export function getConfig(): McpConfig {
   }
 
   const outputMode = parseOutputMode(process.env.MCP_OUTPUT_MODE);
-  const searchPadding = outputMode === "compact" ? 1 : outputMode === "normal" ? 2 : 2;
+  const modeDefaults = outputMode === "compact" ? COMPACT_DEFAULTS : NORMAL_DEFAULTS;
+  const searchContextLines = parsePositiveInt(
+    process.env.MCP_SEARCH_CONTEXT_LINES,
+    modeDefaults.searchContextLines,
+    0,
+    5,
+  );
+  const searchPadding =
+    process.env.MCP_SEARCH_CONTEXT_LINES !== undefined
+      ? searchContextLines
+      : outputMode === "compact"
+        ? modeDefaults.searchContextPadding
+        : outputMode === "normal"
+          ? 1
+          : 2;
 
   cached = {
     outputMode,
-    maxResponseChars: parsePositiveInt(process.env.MCP_MAX_RESPONSE_CHARS, DEFAULTS.maxResponseChars, 1, 100_000),
-    defaultSearchResults: parsePositiveInt(process.env.MCP_DEFAULT_SEARCH_RESULTS, DEFAULTS.defaultSearchResults, 1, 100),
-    treeDepth: parsePositiveInt(process.env.MCP_TREE_DEPTH, DEFAULTS.treeDepth, 0, 6),
+    maxResponseChars: parsePositiveInt(
+      process.env.MCP_MAX_RESPONSE_CHARS,
+      modeDefaults.maxResponseChars,
+      1,
+      100_000,
+    ),
+    defaultSearchResults: parsePositiveInt(
+      process.env.MCP_DEFAULT_SEARCH_RESULTS,
+      modeDefaults.defaultSearchResults,
+      1,
+      100,
+    ),
+    maxCompactSearchResults: modeDefaults.maxCompactSearchResults,
+    defaultSymbolResults: modeDefaults.defaultSymbolResults,
+    treeDepth: parsePositiveInt(process.env.MCP_TREE_DEPTH, modeDefaults.treeDepth, 0, 6),
     symbolContextLines: parsePositiveInt(
       process.env.MCP_SYMBOL_CONTEXT_LINES,
-      DEFAULTS.symbolContextLines,
+      modeDefaults.symbolContextLines,
       5,
       80,
     ),
     searchContextPadding: searchPadding,
+    searchContextLines,
+    maxTreeEntriesPerDir: modeDefaults.maxTreeEntriesPerDir,
   };
 
   return cached;

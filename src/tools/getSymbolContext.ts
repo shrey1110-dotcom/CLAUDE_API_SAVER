@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { getConfig } from "../config.js";
+import { getConfig, isCompactMode } from "../config.js";
 import { buildSymbolPatterns, searchCode } from "../ripgrep.js";
 import { resolveRoot, resolveSafePath } from "../pathSafety.js";
 
@@ -12,31 +12,36 @@ export interface SymbolContextMatch {
   truncated?: boolean;
 }
 
-export function getSymbolContext(symbol: string, root?: string, maxResults = 5): { symbol: string; matches: SymbolContextMatch[] } {
+export function getSymbolContext(
+  symbol: string,
+  root?: string,
+  maxResults?: number,
+): { symbol: string; matches: SymbolContextMatch[] } {
   if (!symbol.trim()) {
     throw new Error("symbol is required");
   }
 
   const config = getConfig();
   const resolvedRoot = resolveRoot(root);
+  const limit = maxResults ?? config.defaultSymbolResults;
   const patterns = buildSymbolPatterns(symbol);
   const seen = new Set<string>();
   const matches: SymbolContextMatch[] = [];
 
   for (const pattern of patterns) {
-    if (matches.length >= maxResults) {
+    if (matches.length >= limit) {
       break;
     }
 
     const searchMatches = searchCode({
       root: resolvedRoot,
       query: pattern,
-      maxResults: maxResults * 3,
+      maxResults: limit * 3,
       contextPadding: 0,
     });
 
     for (const match of searchMatches) {
-      if (matches.length >= maxResults) {
+      if (matches.length >= limit) {
         break;
       }
 
@@ -53,7 +58,7 @@ export function getSymbolContext(symbol: string, root?: string, maxResults = 5):
       }
 
       seen.add(key);
-      const extracted = extractSymbolBlock(lines, match.lineNumber - 1, config.symbolContextLines);
+      const extracted = extractSymbolBlock(lines, match.lineNumber - 1, config.symbolContextLines, isCompactMode());
 
       matches.push({
         filePath: match.filePath,
@@ -76,7 +81,12 @@ function isSymbolDefinitionLine(line: string, symbol: string): boolean {
   ).test(line);
 }
 
-function extractSymbolBlock(lines: string[], lineIndex: number, maxLines: number): {
+function extractSymbolBlock(
+  lines: string[],
+  lineIndex: number,
+  maxLines: number,
+  compact: boolean,
+): {
   startLine: number;
   endLine: number;
   block: string[];
@@ -87,27 +97,51 @@ function extractSymbolBlock(lines: string[], lineIndex: number, maxLines: number
   const totalLines = end - start + 1;
   const truncated = totalLines > maxLines;
 
+  if (!truncated) {
+    return {
+      startLine: start + 1,
+      endLine: end + 1,
+      block: lines.slice(start, end + 1).map((line, index) => `${start + index + 1}: ${line}`),
+      truncated: false,
+    };
+  }
+
+  if (compact) {
+    const headEnd = Math.min(end, start + 3);
+    const tailStart = Math.max(headEnd + 1, end - 3);
+    const block = lines.slice(start, headEnd + 1).map((line, index) => `${start + index + 1}: ${line}`);
+
+    if (tailStart <= end) {
+      block.push("[truncated]");
+      for (let i = tailStart; i <= end; i++) {
+        block.push(`${i + 1}: ${lines[i]}`);
+      }
+    }
+
+    return {
+      startLine: start + 1,
+      endLine: end + 1,
+      block,
+      truncated: true,
+    };
+  }
+
   let sliceStart = start;
   let sliceEnd = end;
-  if (truncated) {
-    sliceStart = Math.max(start, lineIndex - Math.floor(maxLines / 2));
-    sliceEnd = Math.min(end, sliceStart + maxLines - 1);
-  }
+  sliceStart = Math.max(start, lineIndex - Math.floor(maxLines / 2));
+  sliceEnd = Math.min(end, sliceStart + maxLines - 1);
 
   const block = lines.slice(sliceStart, sliceEnd + 1).map((line, index) => {
     const currentLine = sliceStart + index + 1;
     return `${currentLine}: ${line}`;
   });
-
-  if (truncated) {
-    block.push(`... [truncated: body exceeded ${maxLines} context lines]`);
-  }
+  block.push(`... [truncated: body exceeded ${maxLines} context lines]`);
 
   return {
     startLine: sliceStart + 1,
     endLine: sliceEnd + 1,
     block,
-    truncated,
+    truncated: true,
   };
 }
 

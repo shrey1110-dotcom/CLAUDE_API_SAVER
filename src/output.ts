@@ -1,4 +1,4 @@
-import { getMaxResponseChars } from "./config.js";
+import { getMaxResponseChars, isCompactMode } from "./config.js";
 
 const TRUNCATION_NOTICE = "[truncated: output exceeded response cap]";
 
@@ -14,10 +14,14 @@ export function formatToolResult(data: unknown): { content: Array<{ type: "text"
   };
 }
 
+function serializeJson(data: unknown): string {
+  return isCompactMode() ? JSON.stringify(data) : JSON.stringify(data, null, 2);
+}
+
 export function capJsonOutputWithMeta(data: unknown): CappedOutput {
   const maxBytes = getMaxResponseChars();
   let working = structuredClone(data) as unknown;
-  let text = JSON.stringify(working, null, 2);
+  let text = serializeJson(working);
 
   if (Buffer.byteLength(text, "utf8") <= maxBytes) {
     return { text, truncated: false };
@@ -28,15 +32,15 @@ export function capJsonOutputWithMeta(data: unknown): CappedOutput {
     const arrayLimit = Math.max(1, 12 - attempt * 2);
     working = trimPayload(working, arrayLimit);
     const payload = { ...(working as object), _truncated: true, _notice: TRUNCATION_NOTICE };
-    text = JSON.stringify(payload, null, 2);
+    text = serializeJson(payload);
     if (Buffer.byteLength(text, "utf8") <= maxBytes) {
       return { text, truncated };
     }
   }
 
-  text = JSON.stringify({ _truncated: true, _notice: TRUNCATION_NOTICE, preview: summarizePayload(working) }, null, 2);
+  text = serializeJson({ _truncated: true, _notice: TRUNCATION_NOTICE, preview: summarizePayload(working) });
   if (Buffer.byteLength(text, "utf8") > maxBytes) {
-    text = JSON.stringify({ _truncated: true, _notice: TRUNCATION_NOTICE }, null, 2);
+    text = serializeJson({ _truncated: true, _notice: TRUNCATION_NOTICE });
   }
   return { text, truncated: true };
 }
