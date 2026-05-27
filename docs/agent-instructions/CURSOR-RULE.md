@@ -1,8 +1,6 @@
----
-description: Use repo-context MCP as a universal context broker
-globs:
-alwaysApply: true
----
+# Cursor rule text
+
+Copy into `.cursor/rules/` or project rules:
 
 Use repo-context-mcp as a context broker.
 
@@ -17,5 +15,3 @@ Order:
 7. Read full files only when editing or verifying exact implementation details.
 
 Prefer one small `context_pack` call over many broad searches. Respect `budgetTokens`. Avoid broad file reads unless necessary.
-
-Run `npm run graph:build` and `npm run context:build` in the repo if the index is missing.

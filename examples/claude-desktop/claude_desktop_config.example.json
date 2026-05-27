@@ -1,9 +1,8 @@
 {
   "mcpServers": {
     "repo-context-mcp": {
-      "type": "stdio",
       "command": "node",
-      "args": ["${workspaceFolder}/dist/index.js"],
+      "args": ["/path/to/repo-context-mcp/dist/index.js"],
       "env": {
         "MCP_TELEMETRY": "1",
         "MCP_OUTPUT_MODE": "compact",

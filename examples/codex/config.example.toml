@@ -1,0 +1,11 @@
+[mcp_servers.repo-context-mcp]
+command = "node"
+args = ["/path/to/repo-context-mcp/dist/index.js"]
+
+[mcp_servers.repo-context-mcp.env]
+MCP_TELEMETRY = "1"
+MCP_OUTPUT_MODE = "compact"
+MCP_MAX_RESPONSE_CHARS = "9000"
+MCP_DEFAULT_SEARCH_RESULTS = "5"
+MCP_TREE_DEPTH = "2"
+MCP_SYMBOL_CONTEXT_LINES = "14"
