@@ -10,6 +10,13 @@ import { getSymbolContext } from "../tools/getSymbolContext.js";
 
 process.env.MCP_TELEMETRY = "1";
 
+const TARGETS = {
+  averageResponseChars: 1500,
+  largestResponseChars: 4000,
+  totalTokens: 4000,
+  maxSingleResponseChars: 5000,
+};
+
 const root = process.cwd();
 const results: Array<{ tool: string; chars: number; tokens: number }> = [];
 
@@ -22,10 +29,10 @@ function record(tool: string, data: unknown): void {
 record("repo_map", repoMap(root));
 
 for (const query of ["auth", "login", "session"]) {
-  record(`search_code:${query}`, searchCodeTool(query, root, 8));
+  record(`search_code:${query}`, searchCodeTool(query, root));
 }
 
-const search = searchCodeTool("login", root, 8);
+const search = searchCodeTool("login", root);
 const likelyFiles = [...new Set(search.matches.map((match) => match.filePath))].slice(0, 3);
 for (const filePath of likelyFiles) {
   record(`get_file_outline:${filePath}`, getFileOutline(filePath, root));
@@ -33,7 +40,7 @@ for (const filePath of likelyFiles) {
 
 const symbols = ["login", "session", "repoMap"].slice(0, 3);
 for (const symbol of symbols) {
-  record(`get_symbol_context:${symbol}`, getSymbolContext(symbol, root, 2));
+  record(`get_symbol_context:${symbol}`, getSymbolContext(symbol, root));
 }
 
 const totalCalls = results.length;
@@ -46,18 +53,30 @@ const exceeded5k = results.filter((item) => item.chars > 5_000).length;
 const exceeded10k = results.filter((item) => item.chars > 10_000).length;
 const exceeded15k = results.filter((item) => item.chars > 15_000).length;
 
+const targetChecks = {
+  averageUnder1500: average < TARGETS.averageResponseChars,
+  largestUnder4000: largest.chars < TARGETS.largestResponseChars,
+  totalTokensUnder4000: totalTokens < TARGETS.totalTokens,
+  noResponseOver5000: exceeded5k === 0,
+};
+
+const targetsMet = Object.values(targetChecks).every(Boolean);
+
 let verdict = "Excellent";
 if (largest.chars > 15_000 || exceeded15k > 0) {
   verdict = "Bad";
 } else if (largest.chars > 10_000 || exceeded10k > 0) {
   verdict = "Risky";
-} else if (largest.chars > 5_000 || exceeded5k > 0 || average > 4_000) {
+} else if (!targetsMet || largest.chars > 5_000 || exceeded5k > 0 || average > 4_000) {
   verdict = "Good";
 }
 
 const summary = {
   generatedAt: new Date().toISOString(),
   telemetryEnabled: isTelemetryEnabled(),
+  targets: TARGETS,
+  targetChecks,
+  targetsMet,
   totalCalls,
   totalChars,
   totalTokens,
@@ -76,6 +95,10 @@ fs.writeFileSync(path.join(outDir, "benchmark-workflow.json"), `${JSON.stringify
 
 const reportPath = generateTelemetryReport();
 
+function passFail(ok: boolean): string {
+  return ok ? "PASS" : "FAIL";
+}
+
 console.log("Workflow benchmark complete");
 console.log(`Total MCP tool calls: ${totalCalls}`);
 console.log(`Total estimated MCP output tokens: ${totalTokens.toLocaleString()}`);
@@ -84,6 +107,20 @@ console.log(`Largest response: ${largest.tool} (${largest.chars.toLocaleString()
 console.log(`>5,000 chars: ${exceeded5k}`);
 console.log(`>10,000 chars: ${exceeded10k}`);
 console.log(`>15,000 chars: ${exceeded15k}`);
+console.log("");
+console.log("Target comparison:");
+console.log(
+  `  Average response < ${TARGETS.averageResponseChars.toLocaleString()} chars: ${average.toLocaleString()} (${passFail(targetChecks.averageUnder1500)})`,
+);
+console.log(
+  `  Largest response < ${TARGETS.largestResponseChars.toLocaleString()} chars: ${largest.chars.toLocaleString()} (${passFail(targetChecks.largestUnder4000)})`,
+);
+console.log(
+  `  Total estimated tokens < ${TARGETS.totalTokens.toLocaleString()}: ${totalTokens.toLocaleString()} (${passFail(targetChecks.totalTokensUnder4000)})`,
+);
+console.log(
+  `  No response > ${TARGETS.maxSingleResponseChars.toLocaleString()} chars: ${passFail(targetChecks.noResponseOver5000)}`,
+);
 console.log(`Verdict: ${verdict}`);
 console.log(`Benchmark JSON: ${path.join(outDir, "benchmark-workflow.json")}`);
 console.log(`Telemetry report: ${reportPath}`);
