@@ -72,9 +72,12 @@ describe("search_code", () => {
   it("returns compact context", () => {
     const result = searchCodeTool("session", root, 3);
     for (const match of result.matches) {
-      expect(match.context.length).toBeLessThanOrEqual(5);
+      if (match.context) {
+        expect(match.context.length).toBeLessThanOrEqual(3);
+      }
       expect(match.line).not.toMatch(/\n/);
     }
+    expect(result.resultTruncated).toBeDefined();
   });
 
   it("respects default max results from config", () => {
@@ -109,8 +112,8 @@ describe("search_code", () => {
 describe("get_file_outline", () => {
   it("extracts compact imports and symbols", () => {
     const outline = getFileOutline("src/auth/login.ts", fixturePath("simple-node-app"));
-    const imports = outline.imports as Array<{ name: string; line: number }>;
     expect(outline.topLevel.some((item) => (typeof item === "string" ? item : item.name) === "loginUser")).toBe(true);
+    expect(outline.symbolsTotal).toBeGreaterThan(0);
     expect(JSON.stringify(outline)).not.toContain("password");
   });
 
@@ -155,14 +158,16 @@ describe("get_symbol_context", () => {
 describe("get_project_commands", () => {
   it("detects npm scripts in node app", () => {
     const result = getProjectCommands(fixturePath("simple-node-app"));
-    expect(result.sources).toContain("package.json");
-    expect(result.likelyDev).toBeTruthy();
+    expect(result.scripts).toContain("dev");
+    expect(result.likelyDev).toBe("dev");
   });
 
   it("detects makefile and pyproject commands", () => {
-    const result = getProjectCommands(fixturePath("non-node-project"));
-    expect(result.sources).toContain("pyproject.toml");
-    expect(result.sources).toContain("Makefile");
-    expect(result.likelyTest).toBeTruthy();
+    runWithEnv({ MCP_OUTPUT_MODE: "normal" }, () => {
+      const result = getProjectCommands(fixturePath("non-node-project"));
+      expect(result.sources).toContain("pyproject.toml");
+      expect(result.sources).toContain("Makefile");
+      expect(result.likelyTest).toBeTruthy();
+    });
   });
 });

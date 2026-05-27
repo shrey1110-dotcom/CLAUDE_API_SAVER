@@ -20,6 +20,8 @@ describe("edge cases", () => {
       const result = repoMap(fixturePath("simple-node-app"));
       expect(Array.isArray(result.scripts)).toBe(true);
       expect((result.scripts as string[]).includes("dev")).toBe(true);
+      expect(result.summary).toBeDefined();
+      expect("root" in result).toBe(false);
     });
   });
 
@@ -34,9 +36,9 @@ describe("edge cases", () => {
       () => {
         const config = getConfig();
         expect(config.outputMode).toBe("compact");
-        expect(config.defaultSearchResults).toBe(8);
+        expect(config.defaultSearchResults).toBe(5);
         expect(config.treeDepth).toBeLessThanOrEqual(6);
-        expect(config.maxResponseChars).toBe(30_720);
+        expect(config.maxResponseChars).toBe(9000);
       },
     );
   });
