@@ -111,3 +111,4 @@ export function extractMcpToolsFromCodexTranscript(text: string): string[] {
 export function extractMcpToolsFromClaudeTranscript(text: string): string[] {
   return extractMcpToolsFromCodexTranscript(text);
 }
+// fixture paths only; not production repos
