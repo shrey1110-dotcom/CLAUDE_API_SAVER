@@ -82,7 +82,7 @@ line(
 line(
   "Docs",
   docsExist([
-    "docs/client-configs/cursor.md",
+    "docs/client-configs/codex.md",
     "docs/safety.md",
     "docs/benchmarks.md",
     "docs/setup-checklist.md",
@@ -90,8 +90,7 @@ line(
     ? "OK"
     : "INCOMPLETE",
 );
-line("Examples", fileExists("examples/cursor/mcp.json") ? "OK" : "MISSING");
-line("Cursor mcp.json", fileExists(".cursor/mcp.json") ? "present (optional)" : "not in repo (optional)");
+line("Examples", fileExists("examples/generic-stdio/mcp-server.json") ? "OK" : "MISSING");
 
 console.log("\nCompact defaults:");
 line("  MCP_OUTPUT_MODE", config.outputMode);

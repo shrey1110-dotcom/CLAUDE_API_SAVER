@@ -2,7 +2,7 @@
 
 **Universal MCP context broker for coding agents** — compact repo graph, context packs, and optional telemetry.
 
-Works with **Cursor**, **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
+Works with **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
 
 ## What this is
 
@@ -47,7 +47,7 @@ Re-run after large refactors.
 ## Add to an MCP client
 
 1. Point the client at `dist/index.js` (or `repo-context-mcp` after `npm link`).  
-2. Set the compact env block (see [examples/cursor/mcp.json](examples/cursor/mcp.json)).  
+2. Set the compact env block (see [examples/generic-stdio/mcp-server.json](examples/generic-stdio/mcp-server.json)).  
 3. Reload MCP in the client.
 
 Client guides: [docs/client-configs/](docs/client-configs/)
@@ -123,7 +123,6 @@ Read-only MCP tools; local cache only. Details: [docs/safety.md](docs/safety.md)
 
 | Client | Doc |
 | --- | --- |
-| Cursor | [docs/client-configs/cursor.md](docs/client-configs/cursor.md) |
 | Codex | [docs/client-configs/codex.md](docs/client-configs/codex.md) |
 | Claude Code | [docs/client-configs/claude-code.md](docs/client-configs/claude-code.md) |
 | Claude Desktop | [docs/client-configs/claude-desktop.md](docs/client-configs/claude-desktop.md) |

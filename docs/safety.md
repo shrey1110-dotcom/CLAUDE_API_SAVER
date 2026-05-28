@@ -39,4 +39,4 @@ When `MCP_TELEMETRY=1`, the server appends JSON lines to `.mcp-telemetry/logs.js
 - Graph import/call edges are heuristic, not typechecker-accurate.
 - `impact_pack` may run a narrow `git diff --name-only` helper internally; it is not exposed as an MCP shell tool.
 - Compact mode trades readability for smaller responses.
-- Benchmark token estimates are not the same as Cursor/Codex/Claude billed tokens.
+- Benchmark token estimates are not the same as client billed tokens.

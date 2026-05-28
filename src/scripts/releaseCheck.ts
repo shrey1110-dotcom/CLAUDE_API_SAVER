@@ -7,7 +7,6 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const REPORT_PATH = path.join(ROOT, ".mcp-telemetry", "release-check.md");
 
 type Check = { name: string; ok: boolean; detail: string };
-
 const checks: Check[] = [];
 
 function add(name: string, ok: boolean, detail: string): void {
@@ -41,24 +40,24 @@ add("README install section", /npm install/i.test(readme) && /graph:build/i.test
 add("CHANGELOG", exists("CHANGELOG.md"), exists("CHANGELOG.md") ? "present" : "missing");
 add(
   "client docs",
-  ["cursor.md", "codex.md", "claude-code.md", "claude-desktop.md", "generic-stdio.md"].every((f) =>
+  ["codex.md", "claude-code.md", "claude-desktop.md", "generic-stdio.md"].every((f) =>
     exists(`docs/client-configs/${f}`),
   ),
-  "5 client configs",
+  "4 client configs",
 );
-add("examples", exists("examples/cursor/mcp.json"), "cursor example");
+add("examples", exists("examples/generic-stdio/mcp-server.json"), "generic stdio example");
 add("safety doc", exists("docs/safety.md"), "docs/safety.md");
 add("doctor script", exists("dist/scripts/doctor.js"), "dist/scripts/doctor.js");
 add("smoke script", exists("dist/scripts/smokeMcp.js"), "dist/scripts/smokeMcp.js");
 add(".repo-context-graph ignored", gitignore.includes(".repo-context-graph"), "gitignore");
 add(".mcp-telemetry ignored", gitignore.includes(".mcp-telemetry"), "gitignore");
 
-const noAbsPathsInExamples = !readText("examples/cursor/mcp.json").match(/\/Users\//);
+const noAbsPathsInExamples = !readText("examples/generic-stdio/mcp-server.json").match(/\/Users\//);
 add("no user paths in examples", noAbsPathsInExamples, "placeholder paths only");
 
 const coreSrc = walkTs(path.join(ROOT, "src"));
-const noCursorOnly = !coreSrc.match(/\.cursor\/mcp\.json/);
-add("core not Cursor-only", noCursorOnly, "no hardcoded .cursor/mcp.json in src");
+const noHardcodedClientConfigPath = !coreSrc.match(/mcp-server\.json/);
+add("core has no hardcoded client config path", noHardcodedClientConfigPath, "no hardcoded client config paths in src");
 
 function walkTs(dir: string): string {
   let out = "";

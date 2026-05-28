@@ -22,21 +22,19 @@ function readCoreSources(): string {
 }
 
 describe("client-agnostic packaging", () => {
-  it("core code does not hardcode Cursor-specific config paths", () => {
+  it("core code does not hardcode client-specific config paths", () => {
     const source = readCoreSources();
-    expect(source).not.toContain(".cursor/mcp.json");
-    expect(source).not.toMatch(/Cursor Settings/i);
+    expect(source).not.toContain("mcp-server.json");
   });
 
   it("README describes universal MCP usage", () => {
     const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
     expect(readme).toMatch(/Universal MCP context broker/i);
-    expect(readme).toMatch(/Cursor|Codex|Claude/i);
+    expect(readme).toMatch(/Codex|Claude/i);
   });
 
   it("client docs exist for major MCP clients", () => {
     const docs = [
-      "docs/client-configs/cursor.md",
       "docs/client-configs/codex.md",
       "docs/client-configs/claude-code.md",
       "docs/client-configs/claude-desktop.md",
@@ -51,7 +49,6 @@ describe("client-agnostic packaging", () => {
     const docs = [
       "docs/agent-instructions/AGENTS.md",
       "docs/agent-instructions/CLAUDE.md",
-      "docs/agent-instructions/CURSOR-RULE.md",
       "docs/agent-instructions/GENERIC-MCP-CLIENT.md",
     ];
     for (const doc of docs) {

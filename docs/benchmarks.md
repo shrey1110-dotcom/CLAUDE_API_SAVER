@@ -24,7 +24,7 @@ Benchmarks use `estimated tokens ≈ UTF-8 character count / 4`. This is a rough
 | graph | ~1,613 | Four graph tool calls |
 | context | ~668 | Two calls; primary broker path |
 
-**MCP-only savings (context vs workflow):** about 1,738 fewer estimated MCP output tokens in this scripted scenario (~72% reduction vs workflow). This does **not** guarantee lower Cursor/Codex/Claude bills.
+**MCP-only savings (context vs workflow):** about 1,738 fewer estimated MCP output tokens in this scripted scenario (~72% reduction vs workflow). This does **not** guarantee lower client bills.
 
 ## Real client comparison
 

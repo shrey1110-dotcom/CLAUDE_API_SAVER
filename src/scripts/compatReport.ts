@@ -9,7 +9,6 @@ import { isTelemetryEnabled } from "../telemetry/logger.js";
 const REPORT_PATH = path.resolve(".mcp-telemetry/compatibility-report.md");
 
 const CLIENT_DOCS = [
-  "docs/client-configs/cursor.md",
   "docs/client-configs/codex.md",
   "docs/client-configs/claude-code.md",
   "docs/client-configs/claude-desktop.md",
@@ -19,7 +18,6 @@ const CLIENT_DOCS = [
 const AGENT_DOCS = [
   "docs/agent-instructions/AGENTS.md",
   "docs/agent-instructions/CLAUDE.md",
-  "docs/agent-instructions/CURSOR-RULE.md",
   "docs/agent-instructions/GENERIC-MCP-CLIENT.md",
 ];
 

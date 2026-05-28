@@ -113,19 +113,19 @@ npm run telemetry:report
 
 - Outline/symbol parsing is regex-based (v1), not a full TypeScript AST
 - Ripgrep availability changes search behavior vs Node fallback
-- Contribution/token savings vs raw file reads require a real Cursor A/B test
+- Contribution/token savings vs raw file reads require a real client A/B test
 - Monorepo detection is structural, not workspace-aware package graph analysis
 
-## Recommended next steps before real Cursor A/B testing
+## Recommended next steps before real client A/B testing
 
-1. Run \`docs/cursor-ab-test.md\` Test A (MCP disabled) and Test B (MCP enabled) in fresh chats
-2. Compare Cursor total usage + MCP estimated tokens using the documented success rule
-3. If MCP is ignored, strengthen \`.cursor/rules/repo-context-mcp.mdc\`
+1. Run \`docs/multi-client-ab-tests.md\` Test A (MCP disabled) and Test B (MCP enabled) in fresh chats
+2. Compare client total usage + MCP estimated tokens using the documented success rule
+3. If MCP is ignored, strengthen client instructions to call context_pack first
 4. If outputs are large in real repos, lower \`MCP_DEFAULT_SEARCH_RESULTS\` and \`MCP_TREE_DEPTH\`
 
 ## Reminder
 
-Actual Cursor/Codex token savings are **not proven** by this deep test alone. They require MCP-disabled vs MCP-enabled comparison in Cursor.
+Actual client token savings are **not proven** by this deep test alone. They require MCP-disabled vs MCP-enabled comparison in your MCP client.
 `;
 
   fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });

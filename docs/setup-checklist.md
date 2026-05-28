@@ -44,7 +44,6 @@ Expect graph cache and context capsules to show **OK**.
 
 Pick one:
 
-- [Cursor](client-configs/cursor.md)
 - [Codex](client-configs/codex.md)
 - [Claude Code](client-configs/claude-code.md)
 - [Claude Desktop](client-configs/claude-desktop.md)

@@ -14,6 +14,6 @@ Initial MVP:
 - Graph query tools (`graph_query`, `graph_symbol`, and lower-priority neighbors/paths)
 - Optional telemetry and reports
 - Internal benchmarks (workflow, graph, context)
-- Multi-client docs (Cursor, Codex, Claude Code, Claude Desktop, generic stdio)
+- Multi-client docs (Codex, Claude Code, Claude Desktop, generic stdio)
 - Safety-focused read-only MCP design
 - `doctor` and `release:check` scripts for setup validation

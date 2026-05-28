@@ -58,7 +58,7 @@ function buildSavingsOpportunities(toolStats: ToolStats[]): string[] {
   }
 
   if (opportunities.length === 0) {
-    opportunities.push("No major savings opportunities detected yet. Collect more telemetry during real Cursor sessions.");
+    opportunities.push("No major savings opportunities detected yet. Collect more telemetry during real client sessions.");
   }
 
   return opportunities;

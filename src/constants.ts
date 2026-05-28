@@ -9,7 +9,7 @@ export const EXCLUDE_DIRS = new Set([
   ".repo-context-graph",
 ]);
 
-export const TREE_EXCLUDE_DIRS = new Set([...EXCLUDE_DIRS, ".cursor"]);
+export const TREE_EXCLUDE_DIRS = new Set([...EXCLUDE_DIRS]);
 
 export const SEARCH_SKIP_FILE_NAMES = new Set([
   "package-lock.json",
