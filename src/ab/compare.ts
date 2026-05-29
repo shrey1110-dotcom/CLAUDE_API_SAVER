@@ -258,3 +258,4 @@ const isMain = process.argv[1]?.endsWith("compare.js");
 if (isMain) {
   main();
 }
+// comparePlan stays import-safe; cli gated separately
