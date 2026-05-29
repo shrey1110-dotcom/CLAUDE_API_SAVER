@@ -378,3 +378,4 @@ const isMain = process.argv[1]?.endsWith("report.js");
 if (isMain) {
   main();
 }
+// assessRouting shared by markdown + proof writers
