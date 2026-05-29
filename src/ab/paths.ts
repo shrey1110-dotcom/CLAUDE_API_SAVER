@@ -81,4 +81,3 @@ export function readPlanResults(planId: string): AbRunResult[] {
 
   return results.sort((a, b) => (a.completedAt ?? "").localeCompare(b.completedAt ?? ""));
 }
-// codex + claude run dirs live under .mcp-ab-tests
