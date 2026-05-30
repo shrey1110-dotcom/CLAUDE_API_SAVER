@@ -275,3 +275,4 @@ describe("codex adapter", () => {
     expect(doc).toContain("ab:real-check");
   });
 });
+// enoent case uses isolated plan + config
