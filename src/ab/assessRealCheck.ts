@@ -205,3 +205,4 @@ export function assessRealCheck(plan: AbTestPlan, results: AbRunResult[]): RealC
 
   return { status, reasons, logs };
 }
+// proof gate mirrors codex real-check rules
