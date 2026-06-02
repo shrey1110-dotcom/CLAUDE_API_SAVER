@@ -73,6 +73,7 @@ if (largest.chars > 15_000 || exceeded15k > 0) {
 
 const summary = {
   generatedAt: new Date().toISOString(),
+  workflow: "legacy compact search workflow",
   telemetryEnabled: isTelemetryEnabled(),
   targets: TARGETS,
   targetChecks,
@@ -99,7 +100,7 @@ function passFail(ok: boolean): string {
   return ok ? "PASS" : "FAIL";
 }
 
-console.log("Workflow benchmark complete");
+console.log("Workflow benchmark complete (legacy compact search workflow)");
 console.log(`Total MCP tool calls: ${totalCalls}`);
 console.log(`Total estimated MCP output tokens: ${totalTokens.toLocaleString()}`);
 console.log(`Average response size: ${average.toLocaleString()} chars`);

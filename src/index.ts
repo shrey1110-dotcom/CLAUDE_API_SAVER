@@ -40,14 +40,14 @@ async function handleTool<T>(
 
 server.tool(
   "context_status",
-  "Check graph and context index status. Call first when unsure the repo is indexed. Suggests npm run graph:build / context:build if missing.",
+  "Check graph/context cache status. Use before context_pack when unsure indexing is ready. Suggests npm run graph:build / context:build if missing.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("context_status", { root }, () => getContextStatus(root)),
 );
 
 server.tool(
   "context_pack",
-  "PREFERRED FIRST TOOL. Returns the smallest useful file/symbol/command package for a task within budgetTokens. Use before graph_query, search_code, repo_map, or full file reads.",
+  "PRIMARY TOOL. Use first for discovery, debugging, edit planning, and test planning. Prefer over repo_map/search_code/graph_query. Returns the smallest useful context package within budgetTokens.",
   {
     task: z.string(),
     root: z.string().optional(),
@@ -62,7 +62,7 @@ server.tool(
 
 server.tool(
   "impact_pack",
-  "For changed files or diffs: likely dependents, related tests, commands, and risk level. Use when editing or reviewing changes—not for initial discovery (use context_pack first).",
+  "Use for changed-files or diff tasks: likely dependents, related tests/commands, and risk. Call after context_pack when change impact is needed.",
   {
     changedFiles: z.array(z.string()).optional(),
     root: z.string().optional(),
@@ -83,7 +83,7 @@ server.tool(
 
 server.tool(
   "graph_query",
-  "FALLBACK: query the local knowledge graph when context_pack did not return enough. Not the preferred first tool.",
+  "FALLBACK ONLY. Use when context_pack is insufficient or when graph-level detail is explicitly requested.",
   {
     query: z.string(),
     root: z.string().optional(),
@@ -98,7 +98,7 @@ server.tool(
 
 server.tool(
   "graph_symbol",
-  "FALLBACK: find a symbol in the knowledge graph (path, line, neighbors). Use when context_pack is insufficient. No full file bodies.",
+  "FALLBACK ONLY. Symbol lookup in graph (path/line/neighbors) when context_pack is insufficient or graph details are explicitly requested.",
   {
     symbol: z.string(),
     root: z.string().optional(),
@@ -144,7 +144,7 @@ server.tool(
 
 server.tool(
   "get_symbol_context",
-  "Exact symbol-level code snippets (compact). Use only when context_pack/graph_symbol are insufficient and you must verify implementation details.",
+  "Exact function/class snippets (compact). Use only after context_pack identifies a symbol and exact implementation verification is required.",
   {
     symbol: z.string(),
     root: z.string().optional(),
@@ -167,7 +167,7 @@ server.tool(
 
 server.tool(
   "search_code",
-  "FALLBACK ONLY: ripgrep search when context_pack and graph_query are insufficient. Prefer context_pack first.",
+  "LAST-RESORT FALLBACK. Use only when context/graph tools are missing or insufficient. Do not use first when context_pack is available.",
   {
     query: z.string(),
     root: z.string().optional(),
@@ -181,7 +181,7 @@ server.tool(
 
 server.tool(
   "repo_map",
-  "FALLBACK ONLY: compact repo tree and scripts when graph/context index is missing. Prefer context_pack when indexed.",
+  "LAST-RESORT FALLBACK. Compact repo tree/scripts for missing cache or insufficient context/graph results. Do not use first when context_pack is available.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("repo_map", { root }, () => repoMap(root)),
 );

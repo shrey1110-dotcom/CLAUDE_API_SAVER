@@ -66,10 +66,11 @@ function buildSavingsOpportunities(toolStats: ToolStats[]): string[] {
 
 function buildRecommendations(toolStats: ToolStats[], entries: TelemetryEntry[]): string[] {
   const recommendations = [
-    "Prefer repo_map and get_project_commands before broad file reads.",
-    "Use search_code with low maxResults before requesting symbol context.",
-    "Use get_file_outline instead of returning whole files when possible.",
-    "Keep get_symbol_context maxResults at 3-5 unless necessary.",
+    "Prefer context_status then context_pack before any broad discovery calls.",
+    "Use impact_pack for changed-file analysis, not repo-wide search.",
+    "Use graph_query/graph_symbol only when context_pack is insufficient.",
+    "Treat search_code/repo_map as last-resort fallback only.",
+    "Keep get_symbol_context maxResults at 3-5 and use only for exact verification.",
   ];
 
   const failed = entries.filter((entry) => !entry.success);

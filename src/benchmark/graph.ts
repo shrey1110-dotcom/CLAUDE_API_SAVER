@@ -52,6 +52,7 @@ if (!expectedFound) {
 }
 
 const summary = {
+  workflow: "graph-only workflow",
   task: "Find where auth/login/session logic is implemented.",
   totalCalls: results.length,
   totalTokens,
@@ -65,7 +66,7 @@ const outDir = path.resolve(".mcp-telemetry");
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, "benchmark-graph.json"), `${JSON.stringify(summary, null, 2)}\n`, "utf8");
 
-console.log("Graph benchmark complete");
+console.log("Graph benchmark complete (graph-only workflow)");
 console.log(`Total graph tool calls: ${results.length}`);
 console.log(`Total estimated MCP output tokens: ${totalTokens.toLocaleString()}`);
 console.log(`Largest response: ${largest.tool} (${largest.chars.toLocaleString()} chars)`);
