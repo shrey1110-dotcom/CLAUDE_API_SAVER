@@ -25,6 +25,7 @@
     "telemetry:summary": "node dist/telemetry/summary.js",
     "telemetry:report": "node dist/telemetry/report.js",
     "telemetry:test": "node dist/telemetry/test.js",
+    "telemetry:context-test": "node dist/telemetry/contextTest.js",
     "doctor": "node dist/scripts/doctor.js",
     "smoke:mcp": "node dist/scripts/smokeMcp.js",
     "release:check": "node dist/scripts/releaseCheck.js",

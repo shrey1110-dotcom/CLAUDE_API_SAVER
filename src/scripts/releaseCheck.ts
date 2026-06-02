@@ -54,6 +54,7 @@ add(
   ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare"].every((name) => Boolean(scripts[name])),
   "package.json scripts",
 );
+add("telemetry context test script", Boolean(scripts["telemetry:context-test"]), "package.json scripts");
 add("safety doc", exists("docs/safety.md"), "docs/safety.md");
 add("doctor script", exists("dist/scripts/doctor.js"), "dist/scripts/doctor.js");
 add("smoke script", exists("dist/scripts/smokeMcp.js"), "dist/scripts/smokeMcp.js");
@@ -115,6 +116,7 @@ const manualCommands = [
   "npm run build",
   "npm run test:all",
   "npm run test:ab",
+  "npm run telemetry:context-test",
   "npm run graph:build",
   "npm run context:build",
   "npm run ab:create -- --client cursor --repo . --task auth-discovery",

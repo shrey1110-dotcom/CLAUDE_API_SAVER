@@ -36,7 +36,7 @@ const BENCHMARK_SCRIPTS = [
   "benchmark:compact",
 ];
 
-const AB_SCRIPTS = ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare"];
+const AB_SCRIPTS = ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare", "telemetry:context-test"];
 
 const EXPOSED_TOOLS = [
   "context_status",
