@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
+  getTelemetryLogFile,
   MAX_ARG_STRING_LENGTH,
   TELEMETRY_DIR,
-  TELEMETRY_LOG_FILE,
   type TelemetryEntry,
 } from "./types.js";
 
@@ -64,7 +64,7 @@ export function logTelemetryEvent(partial: Omit<TelemetryEntry, "timestamp" | "e
   };
 
   ensureTelemetryDir();
-  fs.appendFileSync(path.resolve(TELEMETRY_LOG_FILE), `${JSON.stringify(entry)}\n`, "utf8");
+  fs.appendFileSync(path.resolve(getTelemetryLogFile()), `${JSON.stringify(entry)}\n`, "utf8");
 }
 
 export async function withTelemetry<T extends { content?: Array<{ type?: string; text?: string }>; isError?: boolean }>(

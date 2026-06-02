@@ -8,16 +8,30 @@ import { generateTelemetryReport } from "./report.js";
 import { withTelemetry } from "./logger.js";
 
 process.env.MCP_TELEMETRY = "1";
+process.env.MCP_TELEMETRY_LOG_FILE = ".mcp-telemetry/synthetic-telemetry-test.jsonl";
+process.env.MCP_TELEMETRY_REPORT_FILE = ".mcp-telemetry/synthetic-telemetry-test-report.md";
 
 const root = process.cwd();
 
 async function runSampleToolCalls(): Promise<void> {
   const calls: Array<{ tool: string; args: Record<string, unknown>; run: () => unknown }> = [
-    { tool: "repo_map", args: { root }, run: () => repoMap(root) },
-    { tool: "search_code", args: { query: "repo-context-mcp", root, maxResults: 3 }, run: () => searchCodeTool("repo-context-mcp", root, 3) },
-    { tool: "get_file_outline", args: { filePath: "src/index.ts", root }, run: () => getFileOutline("src/index.ts", root) },
-    { tool: "get_symbol_context", args: { symbol: "repoMap", root, maxResults: 2 }, run: () => getSymbolContext("repoMap", root, 2) },
-    { tool: "get_project_commands", args: { root }, run: () => getProjectCommands(root) },
+    { tool: "synthetic_repo_map", args: { root }, run: () => repoMap(root) },
+    {
+      tool: "synthetic_search_code",
+      args: { query: "repo-context-mcp", root, maxResults: 3 },
+      run: () => searchCodeTool("repo-context-mcp", root, 3),
+    },
+    {
+      tool: "synthetic_get_file_outline",
+      args: { filePath: "src/index.ts", root },
+      run: () => getFileOutline("src/index.ts", root),
+    },
+    {
+      tool: "synthetic_get_symbol_context",
+      args: { symbol: "repoMap", root, maxResults: 2 },
+      run: () => getSymbolContext("repoMap", root, 2),
+    },
+    { tool: "synthetic_get_project_commands", args: { root }, run: () => getProjectCommands(root) },
   ];
 
   for (const call of calls) {
@@ -34,8 +48,9 @@ async function runSampleToolCalls(): Promise<void> {
 
 async function main(): Promise<void> {
   await runSampleToolCalls();
+  await withTelemetry("synthetic_error_tool", { source: "telemetry:test" }, async () => toolError("synthetic telemetry error"));
   const reportPath = generateTelemetryReport();
-  console.log(`Telemetry test complete.`);
+  console.log("Telemetry test complete (synthetic log/report only).");
   console.log(`Report path: ${reportPath}`);
 }
 

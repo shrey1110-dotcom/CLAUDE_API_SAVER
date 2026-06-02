@@ -11,12 +11,18 @@ import { repoMap } from "../src/tools/repoMap.js";
 import { fixturePath } from "./helpers.js";
 
 const TEST_LOG = path.resolve(".mcp-telemetry/test-logs.jsonl");
+const TEST_REPORT = path.resolve(".mcp-telemetry/test-report.md");
 
 describe("telemetry", () => {
   afterEach(() => {
     delete process.env.MCP_TELEMETRY;
+    delete process.env.MCP_TELEMETRY_LOG_FILE;
+    delete process.env.MCP_TELEMETRY_REPORT_FILE;
     if (fs.existsSync(TEST_LOG)) {
       fs.unlinkSync(TEST_LOG);
+    }
+    if (fs.existsSync(TEST_REPORT)) {
+      fs.unlinkSync(TEST_REPORT);
     }
   });
 
@@ -37,6 +43,8 @@ describe("telemetry", () => {
 
   it("writes complete entries when enabled", async () => {
     process.env.MCP_TELEMETRY = "1";
+    process.env.MCP_TELEMETRY_LOG_FILE = TEST_LOG;
+    process.env.MCP_TELEMETRY_REPORT_FILE = TEST_REPORT;
     await withTelemetry("repo_map", { root: fixturePath("simple-node-app") }, async () =>
       formatToolResult(repoMap(fixturePath("simple-node-app"))),
     );
@@ -53,6 +61,8 @@ describe("telemetry", () => {
 
   it("logs errors with success false", async () => {
     process.env.MCP_TELEMETRY = "1";
+    process.env.MCP_TELEMETRY_LOG_FILE = TEST_LOG;
+    process.env.MCP_TELEMETRY_REPORT_FILE = TEST_REPORT;
     await withTelemetry("bad_tool", { x: "y".repeat(2000) }, async () => toolError("boom"));
     const entry = readTelemetryEntries().at(-1)!;
     expect(entry.success).toBe(false);
@@ -62,6 +72,8 @@ describe("telemetry", () => {
 
   it("report generation works after entries exist", () => {
     process.env.MCP_TELEMETRY = "1";
+    process.env.MCP_TELEMETRY_LOG_FILE = TEST_LOG;
+    process.env.MCP_TELEMETRY_REPORT_FILE = TEST_REPORT;
     logTelemetryEvent({
       tool: "search_code",
       args: { query: "login" },

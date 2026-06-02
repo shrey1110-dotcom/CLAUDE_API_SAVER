@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { TELEMETRY_LOG_FILE, type TelemetryEntry } from "./types.js";
+import { getTelemetryLogFile, type TelemetryEntry } from "./types.js";
 
-export function readTelemetryEntries(logFile = TELEMETRY_LOG_FILE): TelemetryEntry[] {
+export function readTelemetryEntries(logFile = getTelemetryLogFile()): TelemetryEntry[] {
   const absolutePath = path.resolve(logFile);
   if (!fs.existsSync(absolutePath)) {
     return [];

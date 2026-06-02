@@ -4,9 +4,9 @@ import { analyzeTelemetry } from "./analyze.js";
 import { readTelemetryEntries } from "./reader.js";
 import {
   EXCESSIVE_OUTPUT_CHARS,
+  getTelemetryLogFile,
+  getTelemetryReportFile,
   TELEMETRY_DIR,
-  TELEMETRY_LOG_FILE,
-  TELEMETRY_REPORT_FILE,
   type TelemetryEntry,
 } from "./types.js";
 
@@ -47,7 +47,7 @@ function renderReport(analysis: ReturnType<typeof analyzeTelemetry>): string {
   return `# repo-context-mcp Telemetry Report
 
 Generated: ${new Date().toISOString()}
-Log file: \`${TELEMETRY_LOG_FILE}\`
+Log file: \`${getTelemetryLogFile()}\`
 
 ## Overview
 
@@ -104,7 +104,7 @@ ${tokenCostByTool.length ? tokenCostByTool.join("\n") : "- No token cost data ye
 `;
 }
 
-export function generateTelemetryReport(logFile = TELEMETRY_LOG_FILE, reportFile = TELEMETRY_REPORT_FILE): string {
+export function generateTelemetryReport(logFile = getTelemetryLogFile(), reportFile = getTelemetryReportFile()): string {
   const entries = readTelemetryEntries(logFile);
   const analysis = analyzeTelemetry(entries);
   const markdown = renderReport(analysis);

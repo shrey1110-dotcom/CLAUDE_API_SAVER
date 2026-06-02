@@ -39,6 +39,16 @@ export const TELEMETRY_DIR = ".mcp-telemetry";
 export const TELEMETRY_LOG_FILE = `${TELEMETRY_DIR}/logs.jsonl`;
 export const TELEMETRY_REPORT_FILE = `${TELEMETRY_DIR}/report.md`;
 
+export function getTelemetryLogFile(): string {
+  const override = process.env.MCP_TELEMETRY_LOG_FILE?.trim();
+  return override && override.length > 0 ? override : TELEMETRY_LOG_FILE;
+}
+
+export function getTelemetryReportFile(): string {
+  const override = process.env.MCP_TELEMETRY_REPORT_FILE?.trim();
+  return override && override.length > 0 ? override : TELEMETRY_REPORT_FILE;
+}
+
 export const MAX_ARG_STRING_LENGTH = 500;
 export const EXCESSIVE_OUTPUT_CHARS = 20_000;
 export const EXCESSIVE_OUTPUT_TOKENS = Math.ceil(EXCESSIVE_OUTPUT_CHARS / 4);

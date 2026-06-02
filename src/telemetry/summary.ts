@@ -1,12 +1,12 @@
 import { analyzeTelemetry } from "./analyze.js";
 import { readTelemetryEntries } from "./reader.js";
-import { TELEMETRY_LOG_FILE } from "./types.js";
+import { getTelemetryLogFile } from "./types.js";
 
 function printSummary(): void {
   const entries = readTelemetryEntries();
   const analysis = analyzeTelemetry(entries);
 
-  console.log(`Telemetry log: ${TELEMETRY_LOG_FILE}`);
+  console.log(`Telemetry log: ${getTelemetryLogFile()}`);
   console.log(`Total tool calls: ${analysis.totalCalls}`);
   console.log(`Successful calls: ${analysis.successfulCalls}`);
   console.log(`Failed calls: ${analysis.failedCalls}`);
