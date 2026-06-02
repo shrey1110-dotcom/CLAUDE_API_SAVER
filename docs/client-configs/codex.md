@@ -31,3 +31,13 @@ Run `context_status` from the agent after `npm run graph:build` and `npm run con
 ## Token savings test
 
 See `docs/multi-client-ab-tests.md`. Record Codex usage if exposed; compare with MCP disabled.
+
+## A/B quickstart for this client
+
+1. Run no-MCP baseline.
+2. Run context broker mode (`context_status` + `context_pack` first).
+3. Record token/cost/quality numbers from Codex output or usage tools.
+4. Generate report via `npm run ab:report`.
+5. Apply verdict from `npm run ab:compare`.
+
+Automatic usage parsing only works if you explicitly configure the optional command adapter.

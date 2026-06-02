@@ -2,7 +2,7 @@
 
 **Universal MCP context broker for coding agents** — compact repo graph, context packs, and optional telemetry.
 
-Works with **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
+Works with **Cursor**, **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
 
 ## What this is
 
@@ -123,6 +123,7 @@ Read-only MCP tools; local cache only. Details: [docs/safety.md](docs/safety.md)
 
 | Client | Doc |
 | --- | --- |
+| Cursor | [docs/client-configs/cursor.md](docs/client-configs/cursor.md) |
 | Codex | [docs/client-configs/codex.md](docs/client-configs/codex.md) |
 | Claude Code | [docs/client-configs/claude-code.md](docs/client-configs/claude-code.md) |
 | Claude Desktop | [docs/client-configs/claude-desktop.md](docs/client-configs/claude-desktop.md) |
@@ -145,6 +146,18 @@ client_total_with_mcp + MCP_estimated_output_tokens < client_total_without_mcp
 ```
 
 Quality must be equal or better.
+
+## Guided A/B tooling
+
+```bash
+npm run ab:create -- --client cursor --repo . --task auth-discovery
+npm run ab:prompt -- --mode no_mcp
+npm run ab:record -- --mode no_mcp
+npm run ab:report
+npm run ab:compare
+```
+
+Guide: [docs/ab-testing.md](docs/ab-testing.md)
 
 ## Development
 

@@ -37,3 +37,13 @@ Set the client working directory to the repository under analysis.
 ## Token savings test
 
 See `docs/multi-client-ab-tests.md`.
+
+## A/B quickstart for this client
+
+1. Run no-MCP baseline.
+2. Run context broker mode (`context_status` + `context_pack` first).
+3. Record token/cost/quality numbers from your client output.
+4. Generate report via `npm run ab:report`.
+5. Apply verdict from `npm run ab:compare`.
+
+Automatic collection is optional and requires explicit command-adapter configuration.

@@ -25,6 +25,14 @@ D wins only if `client total D + context_pack MCP output < all other modes` and 
 
 ## Per-client checklist
 
+### Cursor
+
+- Same repo and model for A-D
+- Fresh chat per run
+- Record Cursor input/output/cache/total from usage panel
+- Configure MCP via `docs/client-configs/cursor.md`
+- For MCP modes (B/C/D): run `npm run telemetry:clean` before the run, then `npm run telemetry:report`
+
 ### Codex
 
 - Same repo and model settings when possible

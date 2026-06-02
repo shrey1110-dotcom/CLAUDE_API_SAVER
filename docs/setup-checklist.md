@@ -44,6 +44,7 @@ Expect graph cache and context capsules to show **OK**.
 
 Pick one:
 
+- [Cursor](client-configs/cursor.md)
 - [Codex](client-configs/codex.md)
 - [Claude Code](client-configs/claude-code.md)
 - [Claude Desktop](client-configs/claude-desktop.md)
@@ -68,3 +69,5 @@ This measures MCP output size only — not real client billing.
 Use a template from [ab-test-templates/](ab-test-templates/) and follow [multi-client-ab-tests.md](multi-client-ab-tests.md).
 
 Record client usage with and without MCP before claiming savings.
+
+For guided runs, use [ab-testing.md](ab-testing.md).

@@ -1,12 +1,13 @@
-# Claude Desktop
+# Cursor
 
 ## Support
 
-Claude Desktop supports MCP via `claude_desktop_config.json`.
+Cursor supports stdio MCP servers through project or user MCP configuration.
 
 ## Config location
 
-macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Project config: `.cursor/mcp.json`
+- User config: Cursor Settings -> MCP
 
 ## Example
 
@@ -14,6 +15,7 @@ macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 {
   "mcpServers": {
     "repo-context-mcp": {
+      "type": "stdio",
       "command": "node",
       "args": ["/path/to/repo-context-mcp/dist/index.js"],
       "env": {
@@ -31,18 +33,16 @@ macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ## Verify
 
-Restart Claude Desktop after config changes; run `context_status` from a chat.
-
-## Token savings test
-
-See `docs/multi-client-ab-tests.md`.
+1. Build and index: `npm run build && npm run graph:build && npm run context:build`
+2. Reload MCP in Cursor.
+3. Run `context_status` in a new chat.
 
 ## A/B quickstart for this client
 
 1. Run no-MCP baseline.
 2. Run context broker mode (`context_status` + `context_pack` first).
-3. Record token/cost/quality numbers manually from Claude Desktop usage views.
+3. Record token/cost/quality numbers manually from the Cursor UI.
 4. Generate report via `npm run ab:report`.
 5. Apply verdict from `npm run ab:compare`.
 
-GUI usage is manual by default; no automatic usage-panel scraping is assumed.
+Cursor usage panels are not read programmatically by default in this project.

@@ -36,13 +36,19 @@
     "test:graph": "vitest run tests/graph.test.ts",
     "test:context": "vitest run tests/context.test.ts",
     "test:client": "vitest run tests/clientAgnostic.test.ts",
-    "test:all": "npm run build && npm run test && npm run test:edge && npm run test:security && npm run test:benchmark && npm run test:graph && npm run test:context && npm run test:client && npm run benchmark:compact && npm run validate && npm run graph:build && npm run context:build && npm run benchmark:workflow && npm run benchmark:graph && npm run benchmark:context && npm run compat:report && npm run deep-test:report",
+    "test:all": "npm run build && npm run test && npm run test:edge && npm run test:security && npm run test:benchmark && npm run test:graph && npm run test:context && npm run test:client && npm run test:ab && npm run benchmark:compact && npm run validate && npm run graph:build && npm run context:build && npm run benchmark:workflow && npm run benchmark:graph && npm run benchmark:context && npm run compat:report && npm run deep-test:report",
     "benchmark:compact": "node dist/benchmark/compact.js",
     "benchmark:workflow": "node dist/benchmark/workflow.js",
     "benchmark:graph": "node dist/benchmark/graph.js",
     "benchmark:context": "node dist/benchmark/context.js",
     "compat:report": "node dist/scripts/compatReport.js",
-    "deep-test:report": "node dist/scripts/generateDeepTestReport.js"
+    "deep-test:report": "node dist/scripts/generateDeepTestReport.js",
+    "ab:create": "node dist/ab/createPlan.js",
+    "ab:prompt": "node dist/ab/printPrompt.js",
+    "ab:record": "node dist/ab/recordResult.js",
+    "ab:report": "node dist/ab/report.js",
+    "ab:compare": "node dist/ab/compare.js",
+    "test:ab": "npm run build && vitest run tests/ab.test.ts"
   },
   "engines": {
     "node": ">=18"

@@ -1,5 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
+import {
+  AB_COMMAND_ADAPTER_CONFIG,
+  AB_LATEST_REPORT_FILE,
+  AB_MODES,
+  isCommandAdapterEnabled,
+  manualAdapterInfo,
+} from "../ab/index.js";
 import { getContextStatus } from "../context/broker.js";
 import { loadCapsules } from "../context/loadContext.js";
 import { getGraphStatus } from "../graph/queryGraph.js";
@@ -9,6 +16,7 @@ import { isTelemetryEnabled } from "../telemetry/logger.js";
 const REPORT_PATH = path.resolve(".mcp-telemetry/compatibility-report.md");
 
 const CLIENT_DOCS = [
+  "docs/client-configs/cursor.md",
   "docs/client-configs/codex.md",
   "docs/client-configs/claude-code.md",
   "docs/client-configs/claude-desktop.md",
@@ -27,6 +35,8 @@ const BENCHMARK_SCRIPTS = [
   "benchmark:context",
   "benchmark:compact",
 ];
+
+const AB_SCRIPTS = ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare"];
 
 const EXPOSED_TOOLS = [
   "context_status",
@@ -115,6 +125,16 @@ ${docStatus(AGENT_DOCS)}
 ## Benchmark scripts
 
 ${scriptStatus(BENCHMARK_SCRIPTS)}
+
+## A/B tooling
+
+- Manual mode: ${manualAdapterInfo()}
+- A/B scripts present:
+${scriptStatus(AB_SCRIPTS)}
+- Supported A/B modes: ${AB_MODES.join(", ")}
+- Command adapter enabled: ${isCommandAdapterEnabled() ? "yes" : "no"}
+- Command adapter config: ${fs.existsSync(path.resolve(AB_COMMAND_ADAPTER_CONFIG)) ? "present" : "missing"}
+- Latest A/B report: ${fs.existsSync(path.resolve(AB_LATEST_REPORT_FILE)) ? AB_LATEST_REPORT_FILE : "not generated"}
 
 ## Verdict
 

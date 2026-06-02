@@ -33,3 +33,13 @@ Run `context_status` in a fresh session after building graph and context in the 
 ## Token savings test
 
 See `docs/multi-client-ab-tests.md`.
+
+## A/B quickstart for this client
+
+1. Run no-MCP baseline.
+2. Run context broker mode (`context_status` + `context_pack` first).
+3. Record token/cost/quality numbers manually from Claude Code outputs.
+4. Generate report via `npm run ab:report`.
+5. Apply verdict from `npm run ab:compare`.
+
+This project does not assume Claude Code usage can be auto-read unless you configure an adapter.

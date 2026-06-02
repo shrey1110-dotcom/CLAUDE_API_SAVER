@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getConfig } from "../config.js";
+import { AB_LATEST_REPORT_FILE } from "../ab/paths.js";
 import { loadContextManifest } from "../context/loadContext.js";
 import { getGraphCachePaths } from "../graph/paths.js";
 import { getGraphStatus } from "../graph/queryGraph.js";
@@ -82,7 +83,9 @@ line(
 line(
   "Docs",
   docsExist([
+    "docs/client-configs/cursor.md",
     "docs/client-configs/codex.md",
+    "docs/ab-testing.md",
     "docs/safety.md",
     "docs/benchmarks.md",
     "docs/setup-checklist.md",
@@ -91,6 +94,13 @@ line(
     : "INCOMPLETE",
 );
 line("Examples", fileExists("examples/generic-stdio/mcp-server.json") ? "OK" : "MISSING");
+line(
+  "A/B testing support",
+  docsExist(["dist/ab/createPlan.js", "dist/ab/recordResult.js", "dist/ab/report.js", "dist/ab/compare.js", "docs/ab-testing.md"])
+    ? "OK"
+    : "MISSING",
+);
+line("Latest A/B report", fileExists(AB_LATEST_REPORT_FILE) ? AB_LATEST_REPORT_FILE : "not generated yet");
 
 console.log("\nCompact defaults:");
 line("  MCP_OUTPUT_MODE", config.outputMode);
@@ -110,5 +120,5 @@ if (!fs.existsSync(graphPaths.graphDir)) {
   console.log("  npm run context:build");
 } else {
   console.log("\nSuggested next step:");
-  console.log("  npm run benchmark:context");
+  console.log("  npm run ab:create -- --client cursor --repo . --task auth-discovery");
 }

@@ -40,17 +40,32 @@ add("README install section", /npm install/i.test(readme) && /graph:build/i.test
 add("CHANGELOG", exists("CHANGELOG.md"), exists("CHANGELOG.md") ? "present" : "missing");
 add(
   "client docs",
-  ["codex.md", "claude-code.md", "claude-desktop.md", "generic-stdio.md"].every((f) =>
+  ["cursor.md", "codex.md", "claude-code.md", "claude-desktop.md", "generic-stdio.md"].every((f) =>
     exists(`docs/client-configs/${f}`),
   ),
-  "4 client configs",
+  "5 client configs",
 );
 add("examples", exists("examples/generic-stdio/mcp-server.json"), "generic stdio example");
+add("A/B docs", exists("docs/ab-testing.md"), "docs/ab-testing.md");
+add("A/B test file", exists("tests/ab.test.ts"), "tests/ab.test.ts");
+const scripts = (pkg.scripts ?? {}) as Record<string, string>;
+add(
+  "A/B scripts",
+  ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare"].every((name) => Boolean(scripts[name])),
+  "package.json scripts",
+);
 add("safety doc", exists("docs/safety.md"), "docs/safety.md");
 add("doctor script", exists("dist/scripts/doctor.js"), "dist/scripts/doctor.js");
 add("smoke script", exists("dist/scripts/smokeMcp.js"), "dist/scripts/smokeMcp.js");
 add(".repo-context-graph ignored", gitignore.includes(".repo-context-graph"), "gitignore");
 add(".mcp-telemetry ignored", gitignore.includes(".mcp-telemetry"), "gitignore");
+add(".mcp-ab-tests ignored", gitignore.includes(".mcp-ab-tests"), "gitignore");
+const publishedFiles = (pkg.files ?? []) as string[];
+add(
+  "A/B generated artifacts not published",
+  !publishedFiles.some((entry) => entry.includes(".mcp-ab-tests")),
+  JSON.stringify(publishedFiles),
+);
 
 const noAbsPathsInExamples = !readText("examples/generic-stdio/mcp-server.json").match(/\/Users\//);
 add("no user paths in examples", noAbsPathsInExamples, "placeholder paths only");
@@ -91,11 +106,18 @@ if (exists("dist/scripts/smokeMcp.js")) {
   add("smoke:mcp", smoke.ok, smoke.detail);
 }
 
+if (scripts["test:ab"]) {
+  const abTests = run("npm", ["run", "test:ab"]);
+  add("test:ab passes", abTests.ok, abTests.detail);
+}
+
 const manualCommands = [
   "npm run build",
   "npm run test:all",
+  "npm run test:ab",
   "npm run graph:build",
   "npm run context:build",
+  "npm run ab:create -- --client cursor --repo . --task auth-discovery",
   "npm run benchmark:context",
   "npm run compat:report",
 ];
