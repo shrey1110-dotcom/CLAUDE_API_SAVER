@@ -63,4 +63,25 @@ describe("client-agnostic packaging", () => {
     expect(toolCount).toBeLessThanOrEqual(14);
     expect(toolCount).toBeGreaterThanOrEqual(10);
   });
+
+  it("tool descriptions enforce context-pack-first routing", () => {
+    const index = fs.readFileSync(path.resolve("src/index.ts"), "utf8");
+    expect(index).toContain("PRIMARY TOOL");
+    expect(index).toContain("LAST-RESORT FALLBACK");
+    expect(index).toContain("FALLBACK ONLY");
+  });
+
+  it("docs include fallback-dominance routing warning", () => {
+    const docs = [
+      "docs/ab-testing.md",
+      "docs/multi-client-ab-tests.md",
+      "docs/agent-instructions/AGENTS.md",
+    ];
+    for (const doc of docs) {
+      const text = fs.readFileSync(path.resolve(doc), "utf8").toLowerCase();
+      expect(text).toContain("repo_map");
+      expect(text).toContain("search_code");
+      expect(text).toContain("telemetry");
+    }
+  });
 });

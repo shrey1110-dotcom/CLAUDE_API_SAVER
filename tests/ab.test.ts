@@ -79,7 +79,9 @@ describe("A/B tooling", () => {
     expect(noMcp.stdout).toContain("After answering, list the files you inspected or read.");
     expect(compact.stdout).toContain("Do not use context_pack or graph tools");
     expect(graph.stdout).toContain("Prefer graph_status, graph_query, and graph_symbol");
-    expect(broker.stdout).toContain("Then call context_pack with budgetTokens 1000");
+    expect(broker.stdout).toContain("Call context_status.");
+    expect(broker.stdout).toContain("Call context_pack with budgetTokens 1000.");
+    expect(broker.stdout).toContain("Do not call repo_map or search_code unless context_pack is missing");
   });
 
   it("ab:record stores manual results and calculates combined totals", () => {
@@ -218,6 +220,33 @@ describe("A/B tooling", () => {
     expect(fs.readFileSync(reportPath, "utf8")).toContain("## 5. Verdict");
   });
 
+  it("ab:report flags incorrect routing when context_pack is missing", () => {
+    const cwd = makeTempDir();
+    tempDirs.push(cwd);
+    runAbScript(cwd, "createPlan.js", ["--client", "cursor", "--repo", ".", "--task", "auth-discovery"]);
+    runAbScript(cwd, "recordResult.js", ["--mode", "no_mcp", "--client-total", "10000", "--quality", "8", "--found", "true"]);
+    runAbScript(cwd, "recordResult.js", [
+      "--mode",
+      "context_broker",
+      "--client-total",
+      "7000",
+      "--mcp-tokens",
+      "500",
+      "--quality",
+      "8",
+      "--found",
+      "true",
+      "--mcp-tools",
+      "repo_map,search_code",
+    ]);
+
+    runAbScript(cwd, "report.js");
+    const reportPath = path.join(cwd, ".mcp-ab-tests", "reports", "latest-ab-report.md");
+    const report = fs.readFileSync(reportPath, "utf8");
+    expect(report).toContain("incorrect_route");
+    expect(report).toContain("Routing warnings");
+  });
+
   it("command adapter does not run unless AB_ENABLE_COMMAND_ADAPTER=1", async () => {
     delete process.env.AB_ENABLE_COMMAND_ADAPTER;
     await expect(runCommandAdapter({ promptFile: "/tmp/none.txt", yes: true })).rejects.toThrow("disabled");
@@ -261,5 +290,35 @@ describe("A/B tooling", () => {
     const index = fs.readFileSync(path.join(REPO_ROOT, "src", "index.ts"), "utf8");
     expect(index).not.toMatch(/server\.tool\(\s*"ab_/);
     expect(index).not.toMatch(/ab:create|ab:record|ab:compare|ab:report/);
+  });
+
+  it("telemetry context test script enforces context broker route checks", () => {
+    const source = fs.readFileSync(path.join(REPO_ROOT, "src", "telemetry", "contextTest.ts"), "utf8");
+    expect(source).toContain('runTelemetryTool("context_status"');
+    expect(source).toContain('runTelemetryTool("context_pack"');
+    expect(source).toContain("repo_map called 0 times");
+    expect(source).toContain("search_code called 0 times");
+    expect(source).toContain("bad_tool called 0 times");
+  });
+
+  it("synthetic telemetry test is isolated from normal logs", () => {
+    const source = fs.readFileSync(path.join(REPO_ROOT, "src", "telemetry", "test.ts"), "utf8");
+    expect(source).toContain("MCP_TELEMETRY_LOG_FILE");
+    expect(source).toContain("synthetic-telemetry-test.jsonl");
+    expect(source).toContain("synthetic_error_tool");
+  });
+
+  it("docs warn when fallback tools dominate discovery telemetry", () => {
+    const docs = [
+      "docs/ab-testing.md",
+      "docs/multi-client-ab-tests.md",
+      "docs/agent-instructions/AGENTS.md",
+      "docs/client-configs/cursor.md",
+    ];
+    for (const rel of docs) {
+      const text = fs.readFileSync(path.join(REPO_ROOT, rel), "utf8");
+      expect(text.toLowerCase()).toMatch(/repo_map|search_code/);
+      expect(text.toLowerCase()).toContain("telemetry");
+    }
   });
 });

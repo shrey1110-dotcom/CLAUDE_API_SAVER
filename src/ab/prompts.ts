@@ -37,10 +37,22 @@ ${task}
 After answering, list which MCP tools you used and which files you inspected or read.`;
   }
 
-  return `Use repo-context-mcp as a context broker. First call context_status. Then call context_pack with budgetTokens 1000. Do not use broad file reads unless context_pack says full file verification is needed. Do not edit files.
+  return `Use repo-context-mcp v2 context broker.
+
+Required:
+1. Call context_status.
+2. Call context_pack with budgetTokens 1000.
+3. Do not call repo_map or search_code unless context_pack is missing, errors, or explicitly says context is insufficient.
+4. Do not call graph_query unless context_pack is insufficient.
+5. Do not read broad file contents unless context_pack says full file verification is needed.
+
+Do not edit files.
 
 Task:
 ${task}
 
-After answering, list which MCP tools you used and which files you inspected or read.`;
+After answering, list:
+- MCP tools used
+- whether context_pack was sufficient
+- whether any fallback tools were used and why`;
 }
