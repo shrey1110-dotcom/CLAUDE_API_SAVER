@@ -20,6 +20,7 @@ Most GUI clients do not expose token and cost metrics programmatically. Because 
 - Guided/manual mode is the default and primary path.
 - You must record client usage numbers per run.
 - MCP benchmark numbers alone are not proof of real client savings.
+- For Codex, use Codex usage output/reporting/compliance APIs when available, otherwise enter usage manually.
 
 ## Modes
 
@@ -53,6 +54,7 @@ npm run ab:record -- --mode context_broker --use-telemetry
 
 npm run ab:report
 npm run ab:compare
+npm run ab:real-check
 ```
 
 For route sanity checks before real A/B sessions:
@@ -72,6 +74,12 @@ npm run telemetry:context-test
 If `clientTotalTokens` is missing but input/output/cache fields are present, the total is auto-calculated.
 
 If `--use-telemetry` is passed, MCP tool calls/tokens/largest response/tools can be auto-read from `.mcp-telemetry/logs.jsonl`.
+
+For Codex adapter runs:
+
+- `npm run ab:codex` tries to parse usage from Codex output.
+- If usage is not found, it prints: `Codex usage was not found in output. Record real Codex usage manually with ab:record.`
+- Do not infer usage from transcript length.
 
 ## How verdicts are interpreted
 
@@ -105,8 +113,31 @@ Safety properties:
 - Uses `spawn(command, args, { shell: false })`.
 - Does not expose command execution via MCP tools.
 - Does not require storing API keys in this repo.
+- Codex automation must use isolated config files (project-scoped or temp) and must not mutate `~/.codex/config.toml`.
 
 ## Important warning
 
 Benchmarks and telemetry can indicate potential improvements, but they are not proof of real savings. Real savings must be validated per client with A/B runs and quality parity.
 If telemetry shows `repo_map`/`search_code` dominating normal discovery runs, routing is not using v2 correctly.
+Do not claim savings from transcript length alone.
+
+For Codex, `ab:real-check` is the final gate. It returns `INCOMPLETE TEST` until real Codex client totals are auto-parsed or manually recorded.
+
+## Codex A/B testing quickstart
+
+```bash
+npm run ab:codex:plan
+
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 --yes
+
+npm run telemetry:clean
+
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+
+npm run telemetry:report
+npm run ab:report
+npm run ab:compare
+npm run ab:real-check
+```
+
+Use isolated configs from `examples/codex/ab/`. If Codex usage is not parseable, record real usage manually with `ab:record` before running `ab:real-check`.

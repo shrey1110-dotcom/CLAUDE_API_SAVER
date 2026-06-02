@@ -159,6 +159,21 @@ npm run ab:compare
 
 Guide: [docs/ab-testing.md](docs/ab-testing.md)
 
+### Codex A/B testing quickstart
+
+```bash
+npm run ab:codex:plan
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 --yes
+npm run telemetry:clean
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+npm run telemetry:report
+npm run ab:report
+npm run ab:compare
+npm run ab:real-check
+```
+
+The Codex adapter is experimental and disabled by default. If Codex usage cannot be parsed from real JSON usage output, enter real usage manually with `npm run ab:record`. Do not claim real savings unless `ab:real-check` returns `PROVEN SAVINGS`.
+
 ## Development
 
 ```bash

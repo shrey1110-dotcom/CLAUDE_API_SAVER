@@ -1,0 +1,5 @@
+# Codex A/B mode A (no MCP)
+# This config intentionally does not include repo-context-mcp.
+
+# Add any non-MCP Codex settings needed for your environment below.
+# Keep this file project-scoped for controlled A/B testing.

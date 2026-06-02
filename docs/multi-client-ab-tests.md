@@ -38,9 +38,27 @@ Warning: if telemetry shows `repo_map`/`search_code` as dominant tools during no
 ### Codex
 
 - Same repo and model settings when possible
-- Fresh session per run
-- Record Codex usage if the CLI exposes it
+- Fresh session per run; use three repeats when possible
+- Test A: no MCP with `examples/codex/ab/no-mcp.config.toml`
+- Test D: context broker with `examples/codex/ab/context-broker.config.toml`
+- Record Codex usage if the CLI exposes it; otherwise enter real usage manually with `ab:record`
 - Configure via `docs/client-configs/codex.md`
+- Use `npm run ab:real-check` as the final proof gate
+
+Quickstart:
+
+```bash
+npm run ab:codex:plan
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 --yes
+npm run telemetry:clean
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+npm run telemetry:report
+npm run ab:report
+npm run ab:compare
+npm run ab:real-check
+```
+
+If Codex usage is not parseable, manually record real Codex usage numbers before `ab:real-check`.
 
 ### Claude Code
 
