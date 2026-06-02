@@ -33,6 +33,17 @@ macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 Restart Claude Desktop after config changes; run `context_status` from a chat.
 
+## Recommended routing order
+
+1. `context_status`
+2. `context_pack` with `budgetTokens: 1000`
+3. `impact_pack` for changed-files/diff tasks
+4. `get_symbol_context` only for exact symbol verification
+5. `graph_query` / `graph_symbol` only if context is insufficient
+6. `search_code` / `repo_map` only as last-resort fallback
+
+If telemetry shows `repo_map`/`search_code` as dominant discovery tools, the client is not following v2 routing.
+
 ## Token savings test
 
 See `docs/multi-client-ab-tests.md`.

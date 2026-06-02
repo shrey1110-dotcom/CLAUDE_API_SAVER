@@ -28,6 +28,8 @@ Most GUI clients do not expose token and cost metrics programmatically. Because 
 - **C graph**: favor `graph_status`, `graph_query`, `graph_symbol`.
 - **D context broker**: call `context_status` then `context_pack` first.
 
+For mode D, treat `repo_map` / `search_code` as last-resort fallback only if `context_pack` is missing, errors, or is explicitly insufficient.
+
 ## Recommended testing strategy
 
 - First test: **A vs D** (fastest decision).
@@ -51,6 +53,13 @@ npm run ab:record -- --mode context_broker --use-telemetry
 
 npm run ab:report
 npm run ab:compare
+```
+
+For route sanity checks before real A/B sessions:
+
+```bash
+npm run telemetry:clean
+npm run telemetry:context-test
 ```
 
 ## Recording results
@@ -100,3 +109,4 @@ Safety properties:
 ## Important warning
 
 Benchmarks and telemetry can indicate potential improvements, but they are not proof of real savings. Real savings must be validated per client with A/B runs and quality parity.
+If telemetry shows `repo_map`/`search_code` dominating normal discovery runs, routing is not using v2 correctly.

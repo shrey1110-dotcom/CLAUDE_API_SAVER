@@ -28,6 +28,17 @@ MCP_SYMBOL_CONTEXT_LINES = "14"
 
 Run `context_status` from the agent after `npm run graph:build` and `npm run context:build` in the target repo.
 
+## Recommended routing order
+
+1. `context_status`
+2. `context_pack` with `budgetTokens: 1000`
+3. `impact_pack` for diff tasks
+4. `get_symbol_context` only for exact symbol verification
+5. `graph_query` / `graph_symbol` only if context is insufficient
+6. `search_code` / `repo_map` only as last-resort fallback
+
+If telemetry shows `repo_map`/`search_code` as top discovery tools, the v2 route is being bypassed.
+
 ## Token savings test
 
 See `docs/multi-client-ab-tests.md`. Record Codex usage if exposed; compare with MCP disabled.

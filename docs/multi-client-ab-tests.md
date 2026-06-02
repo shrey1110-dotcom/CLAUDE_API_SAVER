@@ -23,6 +23,8 @@ and answer quality is equal or better.
 
 D wins only if `client total D + context_pack MCP output < all other modes` and quality is equal or better.
 
+Warning: if telemetry shows `repo_map`/`search_code` as dominant tools during normal discovery, the agent is not using v2 context-broker routing correctly.
+
 ## Per-client checklist
 
 ### Cursor
