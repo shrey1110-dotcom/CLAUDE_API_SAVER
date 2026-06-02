@@ -44,6 +44,18 @@ export interface AbRunResult {
   answerQuality?: number;
   foundExpectedFiles?: boolean;
   notes?: string;
+
+  adapterName?: string;
+  adapterCommand?: string;
+  adapterConfigPath?: string;
+  adapterOutputDir?: string;
+  adapterStdoutPath?: string;
+  adapterStderrPath?: string;
+  adapterRunCount?: number;
+  transcriptPath?: string;
+  telemetryReportPath?: string;
+  usageParsed?: boolean;
+  usageManuallyEntered?: boolean;
 }
 
 export interface AbComparisonReport {

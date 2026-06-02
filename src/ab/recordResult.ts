@@ -162,6 +162,8 @@ async function main(): Promise<void> {
     answerQuality,
     foundExpectedFiles,
     notes,
+    usageParsed: false,
+    usageManuallyEntered: client === "codex" && typeof clientTotalTokens === "number",
   };
 
   ensureAbDirectories();

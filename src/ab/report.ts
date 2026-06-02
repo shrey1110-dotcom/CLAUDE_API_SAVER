@@ -126,6 +126,12 @@ function value(input: number | boolean | undefined): string {
   return "-";
 }
 
+function codexUsageSource(run: AbRunResult): string {
+  if (run.usageParsed) return "auto-parsed";
+  if (run.usageManuallyEntered) return "manual";
+  return "missing";
+}
+
 function main(): void {
   const plan = readCurrentPlan();
   if (!plan) {
@@ -150,6 +156,27 @@ function main(): void {
   const routingWarnings = plan.modes
     .map((mode) => ({ mode, routing: assessRouting(mode, findByMode(results, mode)) }))
     .filter((entry) => entry.mode === "context_broker" && entry.routing.verdict !== "correct_route");
+
+  const codexRuns = results.filter((result) => result.client === "codex");
+  const codexSection =
+    codexRuns.length === 0
+      ? "No Codex-specific runs recorded."
+      : codexRuns
+          .map(
+            (run) =>
+              `- Mode: ${run.mode}
+  - Codex command: ${run.adapterCommand ?? "-"}
+  - Config: ${run.adapterConfigPath ?? "-"}
+  - Output directory: ${run.adapterOutputDir ?? "-"}
+  - Stdout: ${run.adapterStdoutPath ?? "-"}
+  - Stderr: ${run.adapterStderrPath ?? "-"}
+  - Repeat count: ${run.adapterRunCount ?? "-"}
+  - Usage source: ${codexUsageSource(run)}
+  - Transcript: ${run.transcriptPath ?? "-"}
+  - MCP telemetry report: ${run.telemetryReportPath ?? "-"}
+  ${run.clientTotalTokens === undefined ? "  - Warning: usage unavailable from Codex output; manual entry required." : ""}`.trimEnd(),
+          )
+          .join("\n");
 
   const markdown = `# A/B Test Report
 
@@ -198,6 +225,10 @@ ${routingWarnings.length === 0 ? "- None" : routingWarnings.map((entry) => `- ${
 - Benchmark savings are not the same as real client savings.
 - Each client must be tested separately before claiming savings.
 - Context-broker mode is valid only if routing shows \`context_status\` + \`context_pack\` with no unjustified fallback.
+
+## 8. Codex adapter details
+
+${codexSection}
 `;
 
   const reportPath = resolveAbPath(AB_LATEST_REPORT_FILE);

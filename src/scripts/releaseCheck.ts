@@ -51,7 +51,9 @@ add("A/B test file", exists("tests/ab.test.ts"), "tests/ab.test.ts");
 const scripts = (pkg.scripts ?? {}) as Record<string, string>;
 add(
   "A/B scripts",
-  ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare"].every((name) => Boolean(scripts[name])),
+  ["ab:create", "ab:prompt", "ab:record", "ab:report", "ab:compare", "ab:real-check", "ab:codex", "ab:codex:plan"].every(
+    (name) => Boolean(scripts[name]),
+  ),
   "package.json scripts",
 );
 add("telemetry context test script", Boolean(scripts["telemetry:context-test"]), "package.json scripts");

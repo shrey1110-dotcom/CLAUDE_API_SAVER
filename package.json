@@ -49,7 +49,10 @@
     "ab:record": "node dist/ab/recordResult.js",
     "ab:report": "node dist/ab/report.js",
     "ab:compare": "node dist/ab/compare.js",
-    "test:ab": "npm run build && vitest run tests/ab.test.ts"
+    "ab:real-check": "node dist/ab/realCheck.js",
+    "ab:codex": "node dist/ab/adapters/codexCli.js",
+    "ab:codex:plan": "node dist/ab/codexPlan.js",
+    "test:ab": "npm run build && vitest run tests/ab.test.ts tests/codexAdapter.test.ts"
   },
   "engines": {
     "node": ">=18"
