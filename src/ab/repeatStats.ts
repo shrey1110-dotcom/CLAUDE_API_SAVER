@@ -63,4 +63,3 @@ export function formatStats(stats: RepeatStats | undefined): string {
   if (!stats) return "-";
   return `mean ${stats.mean}, median ${stats.median}, min ${stats.min}, max ${stats.max}, sd ${stats.standardDeviation}${stats.outlierWarning ? `, OUTLIER max ${stats.largestOutlier}` : ""}`;
 }
-// median uses sorted repeat values
