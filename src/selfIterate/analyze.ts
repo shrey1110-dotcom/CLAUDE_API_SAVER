@@ -143,3 +143,4 @@ export function analyzeSelfIteration(root = ROOT): SelfIterateAnalysis {
 
   return { generatedAt: new Date().toISOString(), findings };
 }
+// ci uses committed fixture when runtime log missing
