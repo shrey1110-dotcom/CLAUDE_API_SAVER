@@ -42,3 +42,4 @@ export function toolsForProfile(profile: McpToolProfile): readonly McpToolName[]
 export function isToolExposed(tool: McpToolName, profile: McpToolProfile): boolean {
   return toolsForProfile(profile).includes(tool);
 }
+// locked alias mirrors codex_locked tool set
