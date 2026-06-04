@@ -1,25 +1,101 @@
+import fs from "node:fs";
+import { extractMcpToolsFromCodexTranscript } from "./authDiscoveryQuality.js";
 import { readCurrentPlan, readPlanResults } from "./paths.js";
+import { combinedRepeatStats, clientRepeatStats } from "./repeatStats.js";
+import { assessRouting } from "./report.js";
+import { assessContextBrokerToolLoop } from "./toolLoopPolicy.js";
 import type { AbRunResult } from "./types.js";
 
-type RealCheckStatus =
-  | "PROVEN SAVINGS"
-  | "NO MEANINGFUL CHANGE"
-  | "INCREASED USAGE"
-  | "ROUTING FAILURE"
-  | "INCOMPLETE TEST"
-  | "QUALITY REGRESSION";
+export type RealCheckStatus =
+  | "PROVEN_SAVINGS"
+  | "PROVEN_SAVINGS_STABLE"
+  | "PROMISING_BUT_UNSTABLE"
+  | "NO_MEANINGFUL_CHANGE"
+  | "INCREASED_USAGE"
+  | "INCREASED_USAGE_STABLE"
+  | "INCREASED_USAGE_WITH_OUTLIER"
+  | "TOOL_LOOP_FAILURE"
+  | "ROUTING_FAILURE"
+  | "INCOMPLETE_TEST"
+  | "QUALITY_REGRESSION";
 
-function findMode(results: AbRunResult[], mode: "no_mcp" | "context_broker"): AbRunResult | undefined {
+const LOCKED_FORBIDDEN_TOOLS = [
+  "graph_query",
+  "graph_symbol",
+  "graph_neighbors",
+  "graph_paths",
+  "repo_map",
+  "search_code",
+  "get_symbol_context",
+];
+
+const REQUIRED_REPEATS = 3;
+
+function findMode(results: AbRunResult[], mode: "no_mcp" | "context_broker_locked"): AbRunResult | undefined {
   return results.find((result) => result.mode === mode);
-}
-
-function hasContextPack(result: AbRunResult | undefined): boolean {
-  const tools = [...(result?.mcpToolsUsed ?? []), ...(result?.toolsUsed ?? [])].map((tool) => tool.toLowerCase());
-  return tools.some((tool) => tool === "context_pack" || tool.includes("context_pack"));
 }
 
 function hasNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function toolsFromResult(result: AbRunResult | undefined): string[] {
+  const tools = [...(result?.mcpToolsUsed ?? []), ...(result?.toolsUsed ?? [])].map((tool) => tool.toLowerCase());
+  const stdoutPath = result?.adapterStdoutPath;
+  const text =
+    stdoutPath && fs.existsSync(stdoutPath)
+      ? fs.readFileSync(stdoutPath, "utf8")
+      : result?.transcriptPath && fs.existsSync(result.transcriptPath)
+        ? fs.readFileSync(result.transcriptPath, "utf8")
+        : "";
+  if (text.length > 0) {
+    tools.push(...extractMcpToolsFromCodexTranscript(text).map((tool) => tool.toLowerCase()));
+  }
+  return [...new Set(tools)];
+}
+
+function hasContextPack(result: AbRunResult | undefined): boolean {
+  return toolsFromResult(result).some((tool) => tool === "context_pack" || tool.includes("context_pack"));
+}
+
+function hasContextStatus(result: AbRunResult | undefined): boolean {
+  return toolsFromResult(result).some((tool) => tool === "context_status" || tool.includes("context_status"));
+}
+
+function forbiddenLockedTools(result: AbRunResult | undefined): string[] {
+  const tools = toolsFromResult(result);
+  return LOCKED_FORBIDDEN_TOOLS.filter((bad) => tools.some((tool) => tool === bad || tool.includes(bad)));
+}
+
+function lockedRoutingFailure(result: AbRunResult | undefined): string | null {
+  if (!result) return null;
+  const forbidden = forbiddenLockedTools(result);
+  if (forbidden.length > 0) {
+    return `context_broker_locked used forbidden tools: ${forbidden.join(", ")}.`;
+  }
+  if (!hasContextStatus(result) || !hasContextPack(result)) {
+    return "context_status/context_pack not both present.";
+  }
+  const counts = result.mcpToolCallCounts;
+  if (counts && Object.keys(counts).length > 0) {
+    const contextPackCalls = counts.context_pack ?? 0;
+    const contextStatusCalls = counts.context_status ?? 0;
+    const totalCalls = result.mcpToolCalls ?? contextPackCalls + contextStatusCalls;
+    const repeats = Math.max(1, result.adapterRunCount ?? result.clientTotalTokenRepeats?.length ?? 1);
+    if (contextPackCalls > repeats || contextStatusCalls > repeats || totalCalls > repeats * 2) {
+      return `context_broker_locked made ${totalCalls} MCP calls (context_status=${contextStatusCalls}, context_pack=${contextPackCalls}).`;
+    }
+    return null;
+  }
+  const tools = toolsFromResult(result);
+  if (tools.length > 2) {
+    return `context_broker_locked used unexpected tools: ${tools.join(", ")}.`;
+  }
+  return null;
+}
+
+function savingsPercent(baseline: number, candidate: number): number {
+  return ((baseline - candidate) / baseline) * 100;
 }
 
 function main(): void {
@@ -31,50 +107,97 @@ function main(): void {
 
   const results = readPlanResults(plan.id);
   const baseline = findMode(results, "no_mcp");
-  const broker = findMode(results, "context_broker");
-
-  let status: RealCheckStatus = "INCOMPLETE TEST";
+  const locked = findMode(results, "context_broker_locked");
+  const fullBroker = results.find((result) => result.mode === "context_broker");
   const reasons: string[] = [];
+  let status: RealCheckStatus = "INCOMPLETE_TEST";
 
-  if (!baseline || !broker) {
-    reasons.push("Both no_mcp and context_broker runs are required.");
-  } else if (!hasContextPack(broker)) {
-    status = "ROUTING FAILURE";
-    reasons.push("context_broker mode did not use context_pack.");
-  } else if (
-    !hasNumber(baseline.clientTotalTokens) ||
-    !hasNumber(broker.clientTotalTokens) ||
-    !hasNumber(broker.mcpEstimatedOutputTokens)
-  ) {
-    reasons.push("Real client total tokens are required for no_mcp and context_broker runs.");
-    if (plan.client === "codex") {
-      reasons.push("Codex usage must be auto-parsed from real output or manually recorded with ab:record.");
+  if (fullBroker) {
+    const loop = assessContextBrokerToolLoop({
+      counts: fullBroker.mcpToolCallCounts ?? {},
+      totalCalls: fullBroker.mcpToolCalls,
+    });
+    const baselineCombined = baseline ? combinedRepeatStats(baseline) : undefined;
+    const brokerCombined = combinedRepeatStats(fullBroker);
+    if (
+      loop.toolLoopFailure &&
+      baselineCombined &&
+      brokerCombined &&
+      brokerCombined.mean > baselineCombined.mean
+    ) {
+      console.log("context_broker_diagnostic=TOOL_LOOP_FAILURE");
+      for (const reason of loop.reasons) {
+        console.log(`context_broker_loop_reason=${reason}`);
+      }
     }
-  } else if (!hasNumber(baseline.answerQuality) || !hasNumber(broker.answerQuality)) {
-    reasons.push("Answer quality scores are required for no_mcp and context_broker runs.");
-  } else if (broker.answerQuality < baseline.answerQuality || broker.foundExpectedFiles !== true) {
-    status = "QUALITY REGRESSION";
-    reasons.push("context_broker answer quality is lower than baseline or expected files were not found.");
+  }
+
+  if (!baseline) {
+    reasons.push("no_mcp baseline result is missing.");
+  } else if (!baseline.clientTotalTokenRepeats || baseline.clientTotalTokenRepeats.length < REQUIRED_REPEATS) {
+    reasons.push(`no_mcp needs ${REQUIRED_REPEATS} real repeats (have ${baseline.clientTotalTokenRepeats?.length ?? 0}).`);
+  } else if (!hasNumber(baseline.answerQuality)) {
+    reasons.push("no_mcp answer quality is missing (use ab:ingest-codex or ab:record).");
+  }
+
+  if (!locked) {
+    reasons.push("context_broker_locked result is missing.");
   } else {
-    const combined = broker.clientTotalTokens + broker.mcpEstimatedOutputTokens;
-    const delta = baseline.clientTotalTokens - combined;
-    if (delta > 0) {
-      status = "PROVEN SAVINGS";
-    } else if (delta === 0) {
-      status = "NO MEANINGFUL CHANGE";
-    } else {
-      status = "INCREASED USAGE";
+    const lockedRepeats = locked.clientTotalTokenRepeats?.length ?? 0;
+    if (lockedRepeats < REQUIRED_REPEATS) {
+      reasons.push(`context_broker_locked needs ${REQUIRED_REPEATS} real repeats (have ${lockedRepeats}).`);
     }
-    console.log(`baseline_client_total_tokens=${baseline.clientTotalTokens}`);
-    console.log(`context_broker_client_total_tokens=${broker.clientTotalTokens}`);
-    console.log(`context_broker_mcp_tokens=${broker.mcpEstimatedOutputTokens}`);
-    console.log(`context_broker_combined_total=${combined}`);
-    console.log(`savings_vs_baseline=${delta}`);
-    if (plan.client === "codex") {
-      const noMcpSource = baseline.usageParsed ? "auto-parsed" : baseline.usageManuallyEntered ? "manual" : "missing";
-      const brokerSource = broker.usageParsed ? "auto-parsed" : broker.usageManuallyEntered ? "manual" : "missing";
-      console.log(`codex_no_mcp_usage_source=${noMcpSource}`);
-      console.log(`codex_context_broker_usage_source=${brokerSource}`);
+    if (!locked.usageParsed && !locked.usageManuallyEntered) {
+      reasons.push("Locked Codex usage must be auto-parsed or manually entered.");
+    }
+    if (!hasNumber(locked.answerQuality)) {
+      reasons.push("context_broker_locked answer quality is missing.");
+    }
+    const routingFailure = lockedRoutingFailure(locked);
+    if (routingFailure) {
+      status = "ROUTING_FAILURE";
+      reasons.push(routingFailure);
+    }
+  }
+
+  if (reasons.length === 0 && baseline && locked) {
+    if (locked.foundExpectedFiles !== true) {
+      status = "QUALITY_REGRESSION";
+      reasons.push("Locked mode did not find all expected auth-discovery files.");
+    } else if ((locked.answerQuality ?? 0) < (baseline.answerQuality ?? 0)) {
+      status = "QUALITY_REGRESSION";
+      reasons.push("Locked quality is lower than no_mcp baseline.");
+    } else {
+      const baselineCombined = combinedRepeatStats(baseline);
+      const lockedCombined = combinedRepeatStats(locked);
+      if (!baselineCombined || !lockedCombined) {
+        reasons.push("Combined repeat stats are missing.");
+      } else {
+        const meanSavings = savingsPercent(baselineCombined.mean, lockedCombined.mean);
+        const medianSavings = savingsPercent(baselineCombined.median, lockedCombined.median);
+
+        console.log(`baseline_client_mean=${baselineCombined.mean}`);
+        console.log(`baseline_client_median=${baselineCombined.median}`);
+        console.log(`locked_client_mean=${clientRepeatStats(locked)?.mean ?? "-"}`);
+        console.log(`locked_client_median=${clientRepeatStats(locked)?.median ?? "-"}`);
+        console.log(`locked_mcp_tokens_total=${locked.mcpEstimatedOutputTokens ?? 0}`);
+        console.log(`locked_combined_mean=${lockedCombined.mean}`);
+        console.log(`locked_combined_median=${lockedCombined.median}`);
+        console.log(`mean_savings_percent=${meanSavings.toFixed(1)}`);
+        console.log(`median_savings_percent=${medianSavings.toFixed(1)}`);
+
+        if (medianSavings >= 5 && meanSavings >= 5 && !lockedCombined.outlierWarning) {
+          status = "PROVEN_SAVINGS_STABLE";
+        } else if (medianSavings >= 5 && meanSavings < 0 && lockedCombined.outlierWarning) {
+          status = "PROMISING_BUT_UNSTABLE";
+        } else if (meanSavings < -5 && medianSavings < -5) {
+          status = lockedCombined.outlierWarning ? "INCREASED_USAGE_WITH_OUTLIER" : "INCREASED_USAGE_STABLE";
+        } else if (meanSavings > 0 || medianSavings > 0) {
+          status = "PROVEN_SAVINGS";
+        } else {
+          status = "NO_MEANINGFUL_CHANGE";
+        }
+      }
     }
   }
 
@@ -86,7 +209,7 @@ function main(): void {
     }
   }
 
-  if (status !== "PROVEN SAVINGS") {
+  if (status !== "PROVEN_SAVINGS" && status !== "PROVEN_SAVINGS_STABLE") {
     process.exit(1);
   }
 }

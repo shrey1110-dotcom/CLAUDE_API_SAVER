@@ -3,6 +3,8 @@ import path from "node:path";
 import { comparePlan } from "./compare.js";
 import { AB_LATEST_REPORT_FILE, readCurrentPlan, readPlanResults, resolveAbPath } from "./paths.js";
 import { getModePrompt } from "./prompts.js";
+import { clientRepeatStats, combinedRepeatStats, formatStats, type RepeatStats } from "./repeatStats.js";
+import { assessContextBrokerToolLoop } from "./toolLoopPolicy.js";
 import type { AbMode, AbRunResult } from "./types.js";
 
 export type RoutingVerdict = "correct_route" | "fallback_used" | "incorrect_route" | "inconclusive";
@@ -19,7 +21,8 @@ function modeLabel(mode: AbMode): string {
   if (mode === "no_mcp") return "A: no_mcp";
   if (mode === "compact_search") return "B: compact_search";
   if (mode === "graph") return "C: graph";
-  return "D: context_broker";
+  if (mode === "context_broker_locked") return "D2: context_broker_locked";
+  return "D1: context_broker";
 }
 
 function findByMode(results: AbRunResult[], mode: AbMode): AbRunResult | undefined {
@@ -42,6 +45,36 @@ function hasAnyTool(tools: string[], names: string[]): boolean {
 function hasJustifiedFallback(result: AbRunResult | undefined): boolean {
   const notes = `${result?.notes ?? ""}`.toLowerCase();
   return /insufficient|missing|error|failed/.test(notes);
+}
+
+const LOCKED_FORBIDDEN_TOOLS = [
+  "graph_query",
+  "graph_symbol",
+  "graph_neighbors",
+  "graph_paths",
+  "repo_map",
+  "search_code",
+  "get_symbol_context",
+  "get_project_commands",
+];
+
+function toolCount(result: AbRunResult | undefined, tool: string): number {
+  if (result?.mcpToolCallCounts?.[tool] !== undefined) {
+    return result.mcpToolCallCounts[tool];
+  }
+  return toolsFromResult(result).filter((name) => name === tool || name.includes(tool)).length;
+}
+
+function expectedLockedRepeats(result: AbRunResult | undefined): number {
+  return Math.max(1, result?.adapterRunCount ?? result?.clientTotalTokenRepeats?.length ?? 1);
+}
+
+function lockedModeExceededCallLimits(result: AbRunResult | undefined): boolean {
+  const repeats = expectedLockedRepeats(result);
+  const contextPackCalls = toolCount(result, "context_pack");
+  const contextStatusCalls = toolCount(result, "context_status");
+  const totalCalls = result?.mcpToolCalls ?? contextPackCalls + contextStatusCalls;
+  return contextPackCalls > repeats || contextStatusCalls > repeats || totalCalls > repeats * 2;
 }
 
 export function assessRouting(mode: AbMode, result: AbRunResult | undefined): RoutingAssessment {
@@ -91,10 +124,46 @@ export function assessRouting(mode: AbMode, result: AbRunResult | undefined): Ro
     };
   }
 
+  if (mode === "context_broker_locked") {
+    const hasContextStatus = hasAnyTool(tools, ["context_status"]);
+    const hasContextPack = hasAnyTool(tools, ["context_pack"]);
+    const requiredToolUsed = hasContextStatus && hasContextPack;
+    const forbiddenToolsUsed = tools.filter((tool) => LOCKED_FORBIDDEN_TOOLS.some((bad) => tool.includes(bad)));
+    const looped = lockedModeExceededCallLimits(result);
+    if (!requiredToolUsed) {
+      return {
+        tools,
+        requiredToolUsed,
+        forbiddenToolsUsed,
+        verdict: "incorrect_route",
+        note: "context_status/context_pack not both present.",
+      };
+    }
+    if (forbiddenToolsUsed.length > 0 || looped) {
+      return {
+        tools,
+        requiredToolUsed,
+        forbiddenToolsUsed,
+        verdict: "incorrect_route",
+        note: "Locked mode used forbidden tools or exceeded call-count limits.",
+      };
+    }
+    return { tools, requiredToolUsed, forbiddenToolsUsed, verdict: "correct_route" };
+  }
+
   const hasContextStatus = hasAnyTool(tools, ["context_status"]);
   const hasContextPack = hasAnyTool(tools, ["context_pack"]);
   const requiredToolUsed = hasContextStatus && hasContextPack;
-  const forbiddenToolsUsed = tools.filter((tool) => tool.includes("repo_map") || tool.includes("search_code"));
+  const forbiddenToolsUsed = tools.filter((tool) =>
+    ["repo_map", "search_code", "graph_query", "graph_symbol", "graph_neighbors", "graph_paths", "get_symbol_context"].some(
+      (bad) => tool.includes(bad),
+    ),
+  );
+  const loop = assessContextBrokerToolLoop({
+    counts: result.mcpToolCallCounts ?? {},
+    totalCalls: result.mcpToolCalls,
+  });
+
   if (!requiredToolUsed) {
     return {
       tools,
@@ -102,6 +171,15 @@ export function assessRouting(mode: AbMode, result: AbRunResult | undefined): Ro
       forbiddenToolsUsed,
       verdict: "incorrect_route",
       note: "context_status/context_pack not both present.",
+    };
+  }
+  if (loop.toolLoopFailure) {
+    return {
+      tools,
+      requiredToolUsed,
+      forbiddenToolsUsed,
+      verdict: "incorrect_route",
+      note: `TOOL_LOOP_FAILURE: ${loop.reasons.join(" ")}`.trim(),
     };
   }
   if (forbiddenToolsUsed.length === 0) {
@@ -114,6 +192,45 @@ export function assessRouting(mode: AbMode, result: AbRunResult | undefined): Ro
     verdict: hasJustifiedFallback(result) ? "fallback_used" : "incorrect_route",
     note: hasJustifiedFallback(result) ? "Fallback justified in notes." : "Fallback tools used without justification.",
   };
+}
+
+function statsLine(label: string, stats: RepeatStats | undefined): string {
+  return `- ${label}: ${formatStats(stats)}`;
+}
+
+function toolLoopDiagnosis(results: AbRunResult[]): string {
+  const lines: string[] = [];
+  for (const run of results.filter((result) => result.mode !== "no_mcp")) {
+    const counts = run.mcpToolCallCounts ?? {};
+    const forbidden = LOCKED_FORBIDDEN_TOOLS.filter((tool) => (counts[tool] ?? 0) > 0);
+    const contextPackCalls = counts.context_pack ?? toolCount(run, "context_pack");
+    const contextStatusCalls = counts.context_status ?? toolCount(run, "context_status");
+    const totalCalls = run.mcpToolCalls ?? Object.values(counts).reduce((sum, value) => sum + value, 0);
+    const brokerLoop =
+      run.mode === "context_broker"
+        ? assessContextBrokerToolLoop({ counts, totalCalls })
+        : undefined;
+    const looped =
+      run.mode === "context_broker_locked"
+        ? forbidden.length > 0 || lockedModeExceededCallLimits(run)
+        : Boolean(brokerLoop?.toolLoopFailure);
+    const clientStats = clientRepeatStats(run);
+
+    lines.push(`### ${run.mode}`);
+    lines.push("");
+    lines.push(`- Total MCP calls: ${value(totalCalls)}`);
+    lines.push(`- context_pack calls: ${value(contextPackCalls)}`);
+    lines.push(`- graph tool calls: ${value(brokerLoop?.graphToolCalls)}`);
+    lines.push(`- get_symbol_context calls: ${value(brokerLoop?.symbolToolCalls)}`);
+    lines.push(`- forbidden tool calls: ${forbidden.length ? forbidden.map((tool) => `${tool}=${counts[tool]}`).join(", ") : "-"}`);
+    lines.push(`- Tool-loop failure: ${looped ? "yes" : "no"}`);
+    if (brokerLoop?.reasons.length) {
+      lines.push(`- Tool-loop reasons: ${brokerLoop.reasons.join("; ")}`);
+    }
+    lines.push(`- Largest client-token outlier: ${clientStats?.largestOutlier ?? "-"}`);
+    lines.push("");
+  }
+  return lines.length > 0 ? lines.join("\n") : "- No MCP modes recorded.";
 }
 
 function value(input: number | boolean | undefined): string {
@@ -155,7 +272,11 @@ function main(): void {
 
   const routingWarnings = plan.modes
     .map((mode) => ({ mode, routing: assessRouting(mode, findByMode(results, mode)) }))
-    .filter((entry) => entry.mode === "context_broker" && entry.routing.verdict !== "correct_route");
+    .filter(
+      (entry) =>
+        (entry.mode === "context_broker" || entry.mode === "context_broker_locked") &&
+        entry.routing.verdict !== "correct_route",
+    );
 
   const codexRuns = results.filter((result) => result.client === "codex");
   const codexSection =
@@ -205,28 +326,44 @@ ${rows}
 
 ${routingWarnings.length === 0 ? "- None" : routingWarnings.map((entry) => `- ${entry.mode}: ${entry.routing.verdict}${entry.routing.note ? ` (${entry.routing.note})` : ""}`).join("\n")}
 
-## 4. Winner calculation
+## 4. Repeat stats
+
+${plan.modes
+  .map((mode) => {
+    const result = findByMode(results, mode);
+    return `### ${mode}
+
+${statsLine("Client total tokens", clientRepeatStats(result))}
+${statsLine("Combined total tokens", combinedRepeatStats(result))}`;
+  })
+  .join("\n\n")}
+
+## 5. Tool-loop diagnosis
+
+${toolLoopDiagnosis(results)}
+
+## 6. Winner calculation
 
 - Baseline mode: no_mcp
 - Winner: ${outcome.report.winner ?? "none"}
 - Comparison rule: quality parity first, then lowest combined tokens, then fewer files read, then fewer MCP tool calls.
 
-## 5. Verdict
+## 7. Verdict
 
 - Verdict: ${outcome.report.verdict}
 - Summary: ${outcome.report.summary}
 
-## 6. Recommendation
+## 8. Recommendation
 
 - ${outcome.recommendation}
 
-## 7. Important note
+## 9. Important note
 
 - Benchmark savings are not the same as real client savings.
 - Each client must be tested separately before claiming savings.
 - Context-broker mode is valid only if routing shows \`context_status\` + \`context_pack\` with no unjustified fallback.
 
-## 8. Codex adapter details
+## 10. Codex adapter details
 
 ${codexSection}
 `;

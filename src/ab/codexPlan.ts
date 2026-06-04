@@ -18,8 +18,9 @@ function main(): void {
     repoPath: path.resolve("."),
     taskName,
     taskPrompt: DEFAULT_TASK_PROMPT,
-    modes: ["no_mcp", "context_broker"],
-    notes: "Experimental Codex A/B plan. Do not claim savings until ab:real-check has real Codex usage data.",
+    modes: ["no_mcp", "context_broker", "context_broker_locked"],
+    notes:
+      "Experimental Codex A/B plan. Do not claim savings until ab:real-check has real Codex usage data. Locked mode is the primary proof path for Codex.",
   };
 
   writeJsonFile(planFilePath(plan.id), plan);
@@ -40,12 +41,17 @@ function main(): void {
   console.log("2) No MCP:");
   console.log("AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 --yes");
   console.log("");
-  console.log("3) Context broker:");
+  console.log("3) D1 context broker, full toolset:");
   console.log("npm run telemetry:clean");
   console.log("AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes");
   console.log("npm run telemetry:report");
   console.log("");
-  console.log("4) Final reports and proof gate:");
+  console.log("4) D2 locked context broker, Codex proof path:");
+  console.log("npm run telemetry:clean");
+  console.log("AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker_locked --repo . --repeat 3 --yes");
+  console.log("npm run telemetry:report");
+  console.log("");
+  console.log("5) Final reports and proof gate:");
   console.log("npm run ab:report");
   console.log("npm run ab:compare");
   console.log("npm run ab:real-check");

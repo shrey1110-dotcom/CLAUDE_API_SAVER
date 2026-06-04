@@ -3,7 +3,7 @@ import { stdin as input, stdout as output } from "node:process";
 import type { AbClient, AbMode } from "./types.js";
 
 export const AB_CLIENTS: AbClient[] = ["cursor", "codex", "claude_code", "claude_desktop", "generic"];
-export const AB_MODES: AbMode[] = ["no_mcp", "compact_search", "graph", "context_broker"];
+export const AB_MODES: AbMode[] = ["no_mcp", "compact_search", "graph", "context_broker", "context_broker_locked"];
 
 export type CliArgs = Record<string, string | boolean>;
 

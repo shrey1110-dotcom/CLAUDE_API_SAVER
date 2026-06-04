@@ -3,7 +3,7 @@ import { getModePrompt } from "./prompts.js";
 import { readCurrentPlan } from "./paths.js";
 
 function usage(): string {
-  return "Usage: npm run ab:prompt -- --mode <no_mcp|compact_search|graph|context_broker>";
+  return "Usage: npm run ab:prompt -- --mode <no_mcp|compact_search|graph|context_broker|context_broker_locked>";
 }
 
 function main(): void {

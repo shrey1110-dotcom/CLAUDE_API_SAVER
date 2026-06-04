@@ -22,7 +22,7 @@ function usage(): string {
     "Usage:",
     "  npm run ab:create -- --client <cursor|codex|claude_code|claude_desktop|generic> --repo <path> --task <name>",
     "Optional:",
-    "  --task-prompt <text> --model <name> --notes <text> --modes no_mcp,compact_search,graph,context_broker",
+    "  --task-prompt <text> --model <name> --notes <text> --modes no_mcp,compact_search,graph,context_broker,context_broker_locked",
   ].join("\n");
 }
 
