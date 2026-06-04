@@ -11,7 +11,15 @@ export type GraphNodeType =
   | "config"
   | "command"
   | "test"
-  | "concept";
+  | "concept"
+  | "doc"
+  | "heading"
+  | "pdf"
+  | "image"
+  | "diagram"
+  | "media"
+  | "transcript"
+  | "asset";
 
 export type GraphEdgeType =
   | "contains"
@@ -21,7 +29,18 @@ export type GraphEdgeType =
   | "calls"
   | "tests"
   | "configures"
-  | "related_to";
+  | "related_to"
+  | "mentions"
+  | "explains"
+  | "documents"
+  | "derived_from"
+  | "transcript_of";
+
+export type ExtractionStatus =
+  | "extracted"
+  | "metadata_only"
+  | "unsupported_without_optional_dependency"
+  | "transcript_sidecar";
 
 export interface GraphNode {
   id: string;
@@ -34,6 +53,12 @@ export interface GraphNode {
   tags?: string[];
   sizeBytes?: number;
   hash?: string;
+  mimeType?: string;
+  extension?: string;
+  extractionStatus?: ExtractionStatus | string;
+  sourceType?: string;
+  title?: string;
+  headings?: string[];
 }
 
 export interface GraphEdge {

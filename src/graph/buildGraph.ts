@@ -23,6 +23,7 @@ import {
 import { ensureGraphDir, getGraphCachePaths } from "./paths.js";
 import { deriveTags, summarizeFile, summarizeSymbol } from "./summarize.js";
 import type { GraphEdge, GraphManifest, GraphNode, RepoGraph } from "./types.js";
+import { mergeMultimodalIntoGraph } from "../ingest/multimodalBuild.js";
 import { GRAPH_VERSION } from "./types.js";
 
 function shouldSkipFile(name: string): boolean {
@@ -137,7 +138,11 @@ function parseMakefileTargets(content: string): string[] {
   return targets;
 }
 
-export function buildRepoGraph(root?: string): { graph: RepoGraph; manifest: GraphManifest } {
+export function buildRepoGraph(root?: string): {
+  graph: RepoGraph;
+  manifest: GraphManifest;
+  multimodalStats: ReturnType<typeof mergeMultimodalIntoGraph>["stats"];
+} {
   const resolvedRoot = resolveRoot(root);
   ensureGraphDir(resolvedRoot);
 
@@ -314,13 +319,16 @@ export function buildRepoGraph(root?: string): { graph: RepoGraph; manifest: Gra
     }
   }
 
-  const graph: RepoGraph = {
+  let graph: RepoGraph = {
     version: GRAPH_VERSION,
     root: resolvedRoot,
     generatedAt,
     nodes: [...nodes.values()],
     edges,
   };
+
+  const multimodal = mergeMultimodalIntoGraph(graph, resolvedRoot);
+  graph = multimodal.graph;
 
   const symbolCount = graph.nodes.filter((n) =>
     ["symbol", "function", "class", "interface", "type", "constant"].includes(n.type),
@@ -337,23 +345,32 @@ export function buildRepoGraph(root?: string): { graph: RepoGraph; manifest: Gra
     files: manifestFiles,
   };
 
-  return { graph, manifest };
+  return { graph, manifest, multimodalStats: multimodal.stats };
 }
 
-export function writeRepoGraph(root?: string): { graph: RepoGraph; manifest: GraphManifest } {
-  const { graph, manifest } = buildRepoGraph(root);
+export function writeRepoGraph(root?: string): {
+  graph: RepoGraph;
+  manifest: GraphManifest;
+  multimodalStats?: ReturnType<typeof mergeMultimodalIntoGraph>["stats"];
+} {
+  const { graph, manifest, multimodalStats } = buildRepoGraph(root);
   const paths = getGraphCachePaths(root);
   fs.writeFileSync(paths.graphPath, `${JSON.stringify(graph)}\n`, "utf8");
   fs.writeFileSync(paths.manifestPath, `${JSON.stringify(manifest)}\n`, "utf8");
-  return { graph, manifest };
+  return { graph, manifest, multimodalStats };
 }
 
 async function main(): Promise<void> {
   const root = process.argv[2];
-  const { manifest } = writeRepoGraph(root);
+  const { manifest, multimodalStats } = writeRepoGraph(root);
   console.log(
     `Graph built: ${manifest.nodeCount} nodes, ${manifest.edgeCount} edges, ${manifest.fileCount} files, ${manifest.symbolCount} symbols`,
   );
+  if (multimodalStats) {
+    console.log(
+      `Multimodal: docs=${multimodalStats.docCount} pdfs=${multimodalStats.pdfCount} images=${multimodalStats.imageCount} transcripts=${multimodalStats.transcriptCount} concepts=${multimodalStats.conceptCount}`,
+    );
+  }
   console.log(`Written to ${path.join(resolveRoot(root), ".repo-context-graph")}`);
 }
 
