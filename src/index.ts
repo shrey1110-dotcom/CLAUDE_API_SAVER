@@ -3,9 +3,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { buildContextPack, buildImpactPack, getContextStatus } from "./context/broker.js";
+import { logContextQuery } from "./queries/logger.js";
 import { getConfig } from "./config.js";
 import { formatToolResult, toolError } from "./output.js";
 import { withTelemetry } from "./telemetry/logger.js";
+import { isToolExposed, type McpToolName } from "./toolProfiles.js";
 import { getProjectCommands } from "./tools/getProjectCommands.js";
 import { getSymbolContext } from "./tools/getSymbolContext.js";
 import {
@@ -23,6 +25,12 @@ const server = new McpServer({
   version: "0.1.0",
 });
 
+const toolProfile = getConfig().toolProfile;
+
+function expose(toolName: McpToolName): boolean {
+  return isToolExposed(toolName, toolProfile);
+}
+
 async function handleTool<T>(
   toolName: string,
   args: Record<string, unknown>,
@@ -38,14 +46,14 @@ async function handleTool<T>(
   });
 }
 
-server.tool(
+if (expose("context_status")) server.tool(
   "context_status",
   "Check graph/context cache status. Use before context_pack when unsure indexing is ready. Suggests npm run graph:build / context:build if missing.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("context_status", { root }, () => getContextStatus(root)),
 );
 
-server.tool(
+if (expose("context_pack")) server.tool(
   "context_pack",
   "PRIMARY TOOL. Use first for discovery, debugging, edit planning, and test planning. Prefer over repo_map/search_code/graph_query. Returns the smallest useful context package within budgetTokens.",
   {
@@ -55,12 +63,29 @@ server.tool(
     budgetTokens: z.number().int().min(300).max(2500).optional(),
   },
   async ({ task, root, mode, budgetTokens }) =>
-    handleTool("context_pack", { task, root, mode, budgetTokens }, () =>
-      buildContextPack({ task, root, mode, budgetTokens }),
-    ),
+    handleTool("context_pack", { task, root, mode, budgetTokens }, () => {
+      const pack = buildContextPack({ task, root, mode, budgetTokens });
+      logContextQuery(
+        {
+          task,
+          mode: mode ?? "discovery",
+          budgetTokens: pack.budgetTokens,
+          fileCount: pack.files.length,
+          symbolCount: pack.symbols.length,
+          docCount: pack.docs?.length ?? 0,
+          assetCount: pack.assets?.length ?? 0,
+          conceptCount: pack.concepts?.length ?? 0,
+          estimatedOutputTokens: pack.estimatedOutputTokens ?? 0,
+          truncated: pack.truncated,
+          source: "mcp:context_pack",
+        },
+        root,
+      );
+      return pack;
+    }),
 );
 
-server.tool(
+if (expose("impact_pack")) server.tool(
   "impact_pack",
   "Use for changed-files or diff tasks: likely dependents, related tests/commands, and risk. Call after context_pack when change impact is needed.",
   {
@@ -74,14 +99,14 @@ server.tool(
     ),
 );
 
-server.tool(
+if (expose("graph_status")) server.tool(
   "graph_status",
   "Read-only graph index status. Run npm run graph:build if missing.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("graph_status", { root }, () => graphStatus(root)),
 );
 
-server.tool(
+if (expose("graph_query")) server.tool(
   "graph_query",
   "FALLBACK ONLY. Use when context_pack is insufficient or when graph-level detail is explicitly requested.",
   {
@@ -96,7 +121,7 @@ server.tool(
     ),
 );
 
-server.tool(
+if (expose("graph_symbol")) server.tool(
   "graph_symbol",
   "FALLBACK ONLY. Symbol lookup in graph (path/line/neighbors) when context_pack is insufficient or graph details are explicitly requested.",
   {
@@ -111,7 +136,7 @@ server.tool(
     ),
 );
 
-server.tool(
+if (expose("graph_neighbors")) server.tool(
   "graph_neighbors",
   "Lower-priority: expand graph neighbors for a node, path, or symbol. Keep compact.",
   {
@@ -126,7 +151,7 @@ server.tool(
   async (input) => handleTool("graph_neighbors", input, () => graphNeighbors(input)),
 );
 
-server.tool(
+if (expose("graph_paths")) server.tool(
   "graph_paths",
   "Lower-priority: find short paths between files/symbols in the graph.",
   {
@@ -142,7 +167,7 @@ server.tool(
     ),
 );
 
-server.tool(
+if (expose("get_symbol_context")) server.tool(
   "get_symbol_context",
   "Exact function/class snippets (compact). Use only after context_pack identifies a symbol and exact implementation verification is required.",
   {
@@ -158,14 +183,14 @@ server.tool(
   },
 );
 
-server.tool(
+if (expose("get_project_commands")) server.tool(
   "get_project_commands",
   "Likely test/lint/dev/install commands. Fallback when context_pack omits commands.",
   { root: z.string().optional() },
   async ({ root }) => handleTool("get_project_commands", { root }, () => getProjectCommands(root)),
 );
 
-server.tool(
+if (expose("search_code")) server.tool(
   "search_code",
   "LAST-RESORT FALLBACK. Use only when context/graph tools are missing or insufficient. Do not use first when context_pack is available.",
   {
@@ -179,7 +204,7 @@ server.tool(
   },
 );
 
-server.tool(
+if (expose("repo_map")) server.tool(
   "repo_map",
   "LAST-RESORT FALLBACK. Compact repo tree/scripts for missing cache or insufficient context/graph results. Do not use first when context_pack is available.",
   { root: z.string().optional() },

@@ -35,10 +35,15 @@ export interface ContextPackResult {
   summary: string;
   files: Array<{ path: string; reason: string; score: number }>;
   symbols: Array<{ name: string; kind?: string; path?: string; line?: number; reason: string }>;
+  docs?: Array<{ path: string; reason: string; score: number }>;
+  assets?: Array<{ path: string; type: string; reason: string; score: number }>;
+  concepts?: Array<{ name: string; reason: string; score: number }>;
   commands?: { test?: string; lint?: string; dev?: string };
   nextSteps: string[];
   needsFullFileRead: boolean;
   truncated: boolean;
+  estimatedOutputTokens?: number;
+  generatedAt?: string;
 }
 
 export interface ImpactPackResult {

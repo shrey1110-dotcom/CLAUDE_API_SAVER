@@ -1,7 +1,10 @@
+import { parseToolProfile, type McpToolProfile } from "./toolProfiles.js";
+
 export type OutputMode = "compact" | "normal" | "detailed";
 
 export interface McpConfig {
   outputMode: OutputMode;
+  toolProfile: McpToolProfile;
   maxResponseChars: number;
   defaultSearchResults: number;
   maxCompactSearchResults: number;
@@ -13,7 +16,9 @@ export interface McpConfig {
   maxTreeEntriesPerDir: number;
 }
 
-const COMPACT_DEFAULTS: Omit<McpConfig, "outputMode"> = {
+type ModeDefaults = Omit<McpConfig, "outputMode" | "toolProfile">;
+
+const COMPACT_DEFAULTS: ModeDefaults = {
   maxResponseChars: 9000,
   defaultSearchResults: 5,
   maxCompactSearchResults: 10,
@@ -25,7 +30,7 @@ const COMPACT_DEFAULTS: Omit<McpConfig, "outputMode"> = {
   maxTreeEntriesPerDir: 6,
 };
 
-const NORMAL_DEFAULTS: Omit<McpConfig, "outputMode"> = {
+const NORMAL_DEFAULTS: ModeDefaults = {
   maxResponseChars: 30_720,
   defaultSearchResults: 8,
   maxCompactSearchResults: 100,
@@ -81,6 +86,7 @@ export function getConfig(): McpConfig {
 
   cached = {
     outputMode,
+    toolProfile: parseToolProfile(process.env.MCP_TOOL_PROFILE),
     maxResponseChars: parsePositiveInt(
       process.env.MCP_MAX_RESPONSE_CHARS,
       modeDefaults.maxResponseChars,
