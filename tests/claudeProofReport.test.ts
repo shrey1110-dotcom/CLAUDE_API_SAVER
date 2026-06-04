@@ -49,3 +49,4 @@ describe("claude proof report", () => {
     expect(markdown).toContain("Non-claims");
   });
 });
+// verdict tests use synthetic run payloads
