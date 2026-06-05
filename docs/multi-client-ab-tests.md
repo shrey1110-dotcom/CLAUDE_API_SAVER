@@ -19,11 +19,24 @@ and answer quality is equal or better.
 | A | No MCP |
 | B | Compact MCP search tools (`repo_map`, `search_code`, …) |
 | C | Knowledge graph tools (`graph_query`, `graph_symbol`, …) |
-| D | Context broker (`context_pack` first) |
+| D1 | Context broker (`context_pack` first, full toolset exposed) — **exploratory for Codex, not savings proof** |
+| D2 | Locked context broker for Codex (`context_status` + `context_pack` only) |
 
-D wins only if `client total D + context_pack MCP output < all other modes` and quality is equal or better.
+D2 is the main Codex product proof. D1 failed with `TOOL_LOOP_FAILURE` when Codex over-used graph/symbol tools (~59 MCP calls, ~15k MCP tokens, client tokens worse than baseline). Analyze with `npm run analyze:failed-codex`. D2 wins only if `client total D2 + MCP output D2 < no-MCP total` and quality is equal or better.
+
+**Codex auth-discovery locked proof is complete** (`PROVEN_SAVINGS_STABLE`). See [proofs/codex-auth-discovery-locked.md](proofs/codex-auth-discovery-locked.md).
 
 Warning: if telemetry shows `repo_map`/`search_code` as dominant tools during normal discovery, the agent is not using v2 context-broker routing correctly.
+
+## Codex locked context-broker mode
+
+The first real Codex A/B test increased usage because Codex entered a tool exploration loop. Locked mode exists to reduce that variance by exposing only `context_status` and `context_pack` through `MCP_TOOL_PROFILE=codex_locked`.
+
+Recommended Codex ladder:
+
+- A: `no_mcp`
+- D1: `context_broker` full toolset
+- D2: `context_broker_locked`
 
 ## Per-client checklist
 
@@ -40,7 +53,8 @@ Warning: if telemetry shows `repo_map`/`search_code` as dominant tools during no
 - Same repo and model settings when possible
 - Fresh session per run; use three repeats when possible
 - Test A: no MCP with `examples/codex/ab/no-mcp.config.toml`
-- Test D: context broker with `examples/codex/ab/context-broker.config.toml`
+- Test D1: context broker with `examples/codex/ab/context-broker.config.toml`
+- Test D2: locked context broker with `examples/codex/ab/context-broker-locked.config.toml`
 - Record Codex usage if the CLI exposes it; otherwise enter real usage manually with `ab:record`
 - Configure via `docs/client-configs/codex.md`
 - Use `npm run ab:real-check` as the final proof gate
@@ -51,7 +65,7 @@ Quickstart:
 npm run ab:codex:plan
 AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 --yes
 npm run telemetry:clean
-AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker_locked --repo . --repeat 3 --yes
 npm run telemetry:report
 npm run ab:report
 npm run ab:compare

@@ -1,12 +1,41 @@
 # repo-context-mcp
 
-**Universal MCP context broker for coding agents** — compact repo graph, context packs, and optional telemetry.
+**Broker-first context intelligence layer for coding agents** — builds local repo intelligence and returns compact task-specific context packs through MCP, CLI, or files.
 
 Works with **Cursor**, **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
 
+> **Token savings are not guaranteed.** This project includes A/B tooling to prove or disprove savings per client/task. Benchmarks measure MCP output size, not end-to-end client usage.
+
+## Proven Scope
+
+One real Codex proof is complete:
+
+- Client: Codex CLI `0.137.0-alpha.4`
+- Task: `auth-discovery`
+- Mode: `context_broker_locked`
+- Routing: `context_status` + `context_pack` only
+- No-MCP baseline: `210,298` / `450,685` / `273,530`
+- Locked combined: `62,509` / `62,495` / `62,276`
+- Mean savings: `80.0%`
+- Median savings: `77.2%`
+- Quality: `9/10` vs `9/10`
+- Expected files: `5/5`
+- Verdict: `PROVEN_SAVINGS_STABLE`
+
+Allowed claim: repo-context-mcp locked broker proved stable savings for Codex CLI auth-discovery in this repo. See [docs/proofs/codex-auth-discovery-locked.md](docs/proofs/codex-auth-discovery-locked.md).
+
+Not yet proven:
+
+- Not proven against Graphify.
+- Not proven for Cursor, Claude, Gemini, or other clients.
+- Not proven for all tasks.
+- Not proven for full `context_broker` mode.
+
+Next head-to-head benchmark: A no context, B Graphify, C repo-context-mcp locked broker.
+
 ## What this is
 
-A local, read-only MCP server that builds a small knowledge graph and topic capsules offline, then answers agent requests with **compact context packages** instead of full file dumps.
+A local, read-only MCP server and CLI that builds deterministic context intelligence (graph, capsules, multimodal metadata) offline, then answers agent requests with **`context_pack`** — compact, task-specific context instead of full file dumps or graph tool loops.
 
 ## What problem it solves
 
@@ -38,11 +67,29 @@ npm run benchmark:context
 Run in the repository you want indexed (usually the project root):
 
 ```bash
-npm run graph:build
+npm run graph:build   # code + deterministic multimodal docs/assets
 npm run context:build
 ```
 
 Re-run after large refactors.
+
+## Universal LLM mode (no MCP)
+
+Generate a portable context pack for any LLM client:
+
+```bash
+npm run context:pack -- --task "your task" --budget 1000 --format markdown --out .context-packs/task.md
+```
+
+See [docs/universal-llm-usage.md](docs/universal-llm-usage.md).
+
+## Broker-first architecture
+
+The knowledge graph and multimodal ingestion feed **`context_pack` internally**. Agents should not wander through graph/search tools — use **`context_pack` first**, fallbacks only when needed. **Locked mode** (`codex_locked`) exposes only `context_status` + `context_pack` to prevent tool loops.
+
+Strategy: [docs/broker-first-context-strategy.md](docs/broker-first-context-strategy.md) · Status: [docs/product-status.md](docs/product-status.md) · Proofs: [docs/proofs/README.md](docs/proofs/README.md) · Handoff: [docs/handoffs/cursor-continuation-after-codex-proof.md](docs/handoffs/cursor-continuation-after-codex-proof.md)
+
+Real token savings require per-client A/B proof (`ab:real-check`), not benchmarks alone.
 
 ## Add to an MCP client
 
@@ -87,6 +134,16 @@ Use repo-context-mcp as a context broker. First call context_status, then contex
 }
 ```
 
+Use `MCP_TOOL_PROFILE` to limit exposed tools for controlled client tests. Default is `full`.
+
+| Profile | Exposed tools |
+| --- | --- |
+| `full` | all MCP tools |
+| `context_only` | `context_status`, `context_pack`, `impact_pack` |
+| `codex_locked` | `context_status`, `context_pack` |
+| `graph` | graph tools |
+| `search` | repo map/search/symbol command tools |
+
 ## CLI
 
 After `npm run build`:
@@ -101,6 +158,7 @@ npx repo-context-mcp   # when linked or installed
 
 ```bash
 npm run benchmark:context   # recommended path (~668 MCP tokens in reference repo)
+npm run benchmark:context-locked
 npm run benchmark:graph
 npm run benchmark:workflow
 ```
@@ -161,11 +219,13 @@ Guide: [docs/ab-testing.md](docs/ab-testing.md)
 
 ### Codex A/B testing quickstart
 
+Use locked mode for the primary Codex proof path. The first real Codex A/B test increased usage because Codex entered a tool exploration loop; `context_broker_locked` limits exposed MCP tools to `context_status` and `context_pack`.
+
 ```bash
 npm run ab:codex:plan
 AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 --yes
 npm run telemetry:clean
-AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker_locked --repo . --repeat 3 --yes
 npm run telemetry:report
 npm run ab:report
 npm run ab:compare
@@ -185,7 +245,7 @@ npm run release:check
 npm run compat:report
 ```
 
-Product overview: [docs/product.md](docs/product.md) · Changelog: [CHANGELOG.md](CHANGELOG.md)
+Product overview: [docs/product.md](docs/product.md) · Status: [docs/product-status.md](docs/product-status.md) · Next benchmarks: [docs/next-benchmark-phase.md](docs/next-benchmark-phase.md) · Changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ## License
 

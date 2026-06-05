@@ -28,6 +28,16 @@ MCP_TREE_DEPTH = "2"
 MCP_SYMBOL_CONTEXT_LINES = "14"
 ```
 
+Set `MCP_TOOL_PROFILE` only when you intentionally want to limit exposed tools for a controlled test. The default profile is `full`.
+
+Profiles:
+
+- `full`: all tools
+- `context_only`: `context_status`, `context_pack`, `impact_pack`
+- `codex_locked`: `context_status`, `context_pack`
+- `graph`: graph tools only
+- `search`: repo map/search/symbol command tools only
+
 ## Verify
 
 Run `context_status` from the agent after `npm run graph:build` and `npm run context:build` in the target repo.
@@ -57,6 +67,30 @@ context_broker_client_total + MCP_estimated_output_tokens < no_mcp_client_total
 
 with answer quality equal or better.
 
+## Codex locked context-broker mode
+
+The first real Codex A/B test in full `context_broker` mode **failed** with `TOOL_LOOP_FAILURE`: Codex entered a tool exploration loop (`graph_symbol`, `graph_neighbors`, `get_symbol_context` repeated dozens of times). MCP output was only ~15k tokens, but Codex client tokens exploded. See `docs/postmortems/codex-full-context-failure.md` and `npm run analyze:failed-codex`.
+
+**For Codex token-saving proof, use `context_broker_locked` — not full `context_broker`.** Full D1 is exploratory/debug only.
+
+Locked mode limits repo-context-mcp to `context_status` and `context_pack` through `MCP_TOOL_PROFILE=codex_locked`. It keeps the full MCP implementation available for normal clients and configs, but removes fallback tools from the Codex proof surface.
+
+Use:
+
+- `examples/codex/ab/no-mcp.config.toml` for A
+- `examples/codex/ab/context-broker.config.toml` for D1
+- `examples/codex/ab/context-broker-locked.config.toml` for D2
+
+D2 proves the product hypothesis only if:
+
+```text
+Codex client total D2 + MCP tokens D2 < no-MCP total
+```
+
+and quality is equal or better and routing is correct.
+
+**Codex auth-discovery locked proof is complete** (`PROVEN_SAVINGS_STABLE`). See [proofs/codex-auth-discovery-locked.md](../proofs/codex-auth-discovery-locked.md). Do not use full `context_broker` for savings proof.
+
 ## A/B quickstart for this client
 
 1. Run no-MCP baseline.
@@ -73,11 +107,13 @@ Use templates:
 
 - `examples/codex/ab/no-mcp.config.toml`
 - `examples/codex/ab/context-broker.config.toml`
+- `examples/codex/ab/context-broker-locked.config.toml`
 
 Modes:
 
 - **A no_mcp**: no repo-context-mcp server configured
-- **D context_broker**: repo-context-mcp configured with compact env defaults
+- **D1 context_broker**: repo-context-mcp configured with compact env defaults and the full toolset
+- **D2 context_broker_locked**: repo-context-mcp configured with `MCP_TOOL_PROFILE=codex_locked`
 
 ## Experimental Codex adapter config
 
@@ -106,7 +142,7 @@ AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 
 
 npm run telemetry:clean
 
-AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker_locked --repo . --repeat 3 --yes
 
 npm run telemetry:report
 npm run ab:report
@@ -118,7 +154,7 @@ If Codex usage is not parseable from JSON usage output, enter real usage manuall
 
 ```bash
 npm run ab:record -- --mode no_mcp --client codex
-npm run ab:record -- --mode context_broker --client codex --use-telemetry
+npm run ab:record -- --mode context_broker_locked --client codex --use-telemetry
 ```
 
 Do not claim savings unless `npm run ab:real-check` returns `PROVEN SAVINGS`.

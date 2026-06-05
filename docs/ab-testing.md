@@ -4,12 +4,13 @@ This project includes a real A/B testing system for evaluating whether MCP usage
 
 ## What A/B testing means here
 
-We compare four modes for the same task prompt:
+We compare modes for the same task prompt:
 
 - A: `no_mcp`
 - B: `compact_search`
 - C: `graph`
-- D: `context_broker`
+- D1: `context_broker`
+- D2: `context_broker_locked`
 
 The system combines manually entered client usage metrics with MCP telemetry output metrics.
 
@@ -27,14 +28,41 @@ Most GUI clients do not expose token and cost metrics programmatically. Because 
 - **A no MCP**: baseline without MCP tools.
 - **B compact search**: favor `repo_map`, `search_code`, `get_project_commands`, `get_symbol_context`.
 - **C graph**: favor `graph_status`, `graph_query`, `graph_symbol`.
-- **D context broker**: call `context_status` then `context_pack` first.
+- **D1 context broker**: call `context_status` once then `context_pack` once first; full toolset still exposed. **Not recommended for Codex savings proof** — Codex may enter tool loops. Hard fallback budgets apply (see prompt). Exceeding budgets classifies as `TOOL_LOOP_FAILURE`.
+- **D2 locked context broker**: expose only `context_status` and `context_pack` for Codex A/B proof tests.
 
-For mode D, treat `repo_map` / `search_code` as last-resort fallback only if `context_pack` is missing, errors, or is explicitly insufficient.
+For mode D1, treat graph/symbol/search tools as last-resort fallback only if `context_pack` is explicitly insufficient. Analyze failed runs with `npm run analyze:failed-codex`.
+For mode D2, fallback search, graph, and symbol tools are not exposed.
+
+## Codex locked context-broker mode
+
+The first real Codex A/B test increased usage because Codex entered a tool exploration loop. MCP output was small, but the client-side token total spiked after repeated `context_pack`, graph, and symbol calls.
+
+Locked mode tests the pure context-broker hypothesis for Codex by using `MCP_TOOL_PROFILE=codex_locked`, which exposes only:
+
+- `context_status`
+- `context_pack`
+
+Recommended Codex ladder:
+
+- A: `no_mcp`
+- D1: `context_broker` with the full toolset
+- D2: `context_broker_locked`
+
+D2 is the main product proof only if:
+
+```text
+Codex client total D2 + MCP tokens D2 < no-MCP total
+```
+
+and quality is equal or better and routing is correct.
+
+**Codex auth-discovery locked proof is complete** (`PROVEN_SAVINGS_STABLE`). See [proofs/codex-auth-discovery-locked.md](proofs/codex-auth-discovery-locked.md). Full `context_broker` (D1) is exploratory only — it failed with `TOOL_LOOP_FAILURE`.
 
 ## Recommended testing strategy
 
-- First test: **A vs D** (fastest decision).
-- Full ladder test: **A/B/C/D** for deeper comparison.
+- First test: **A vs D2** for Codex locked-mode proof.
+- Full ladder test: **A/B/C/D1/D2** for deeper comparison.
 
 ## Guided manual flow
 
@@ -90,13 +118,20 @@ Baseline is `no_mcp`. For each MCP mode:
   - `answerQuality >= baselineQuality`
   - `foundExpectedFiles === true`
 
-Verdicts:
+Single-run verdicts:
 
 - `saved_tokens`: best quality-valid MCP mode saves at least 5%.
 - `no_meaningful_change`: best quality-valid MCP mode is within +/-5%.
 - `increased_tokens`: all quality-valid MCP modes are more than 5% worse.
 - `quality_regression`: token savings exist, but quality parity fails.
 - `inconclusive`: required fields are missing.
+
+Repeat-aware verdicts:
+
+- `PROVEN_SAVINGS_STABLE`: mean and median improve by at least 5%, quality is equal or better, and no outlier is present.
+- `PROMISING_BUT_UNSTABLE`: median improves but the mean is worse because an outlier likely caused a tool-loop spike.
+- `INCREASED_USAGE_STABLE`: mean and median are both worse.
+- `INCREASED_USAGE_WITH_OUTLIER`: usage is worse and the largest repeat is more than 2x the median.
 
 ## Optional command adapter (experimental)
 
@@ -132,7 +167,7 @@ AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode no_mcp --repo . --repeat 3 
 
 npm run telemetry:clean
 
-AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker --repo . --repeat 3 --yes
+AB_ENABLE_CODEX_ADAPTER=1 npm run ab:codex -- --mode context_broker_locked --repo . --repeat 3 --yes
 
 npm run telemetry:report
 npm run ab:report
