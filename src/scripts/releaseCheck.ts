@@ -47,6 +47,12 @@ add(
 );
 add("examples", exists("examples/generic-stdio/mcp-server.json"), "generic stdio example");
 add("A/B docs", exists("docs/ab-testing.md"), "docs/ab-testing.md");
+add("codex local proof doc", exists("docs/codex-local-proof.md"), "docs/codex-local-proof.md");
+add(
+  "codex local proof mentions --codex-bin",
+  exists("docs/codex-local-proof.md") && readText("docs/codex-local-proof.md").includes("--codex-bin"),
+  "docs/codex-local-proof.md",
+);
 add("A/B test file", exists("tests/ab.test.ts"), "tests/ab.test.ts");
 const scripts = (pkg.scripts ?? {}) as Record<string, string>;
 add(
@@ -57,6 +63,10 @@ add(
   "package.json scripts",
 );
 add("telemetry context test script", Boolean(scripts["telemetry:context-test"]), "package.json scripts");
+add("codex doctor script", Boolean(scripts["codex:doctor"]), "package.json scripts");
+add("codex proof instructions script", Boolean(scripts["codex:proof:locked:instructions"]), "package.json scripts");
+add("analyze failed codex script", Boolean(scripts["analyze:failed-codex"]), "package.json scripts");
+add("codex failure postmortem", exists("docs/postmortems/codex-full-context-failure.md"), "docs/postmortems/codex-full-context-failure.md");
 add("safety doc", exists("docs/safety.md"), "docs/safety.md");
 add("doctor script", exists("dist/scripts/doctor.js"), "dist/scripts/doctor.js");
 add("smoke script", exists("dist/scripts/smokeMcp.js"), "dist/scripts/smokeMcp.js");

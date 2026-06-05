@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { MCP_TOOL_NAMES, toolsForProfile } from "../src/toolProfiles.js";
 
 const CORE_SRC = path.resolve("src");
 
@@ -27,10 +28,11 @@ describe("client-agnostic packaging", () => {
     expect(source).not.toContain(".cursor/mcp.json");
   });
 
-  it("README describes universal MCP usage", () => {
+  it("README describes broker-first context intelligence", () => {
     const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
-    expect(readme).toMatch(/Universal MCP context broker/i);
+    expect(readme).toMatch(/broker-first context intelligence/i);
     expect(readme).toMatch(/Cursor|Codex|Claude/i);
+    expect(readme).not.toMatch(/Graphify-inspired/i);
   });
 
   it("client docs exist for major MCP clients", () => {
@@ -62,6 +64,18 @@ describe("client-agnostic packaging", () => {
     const toolCount = (index.match(/server\.tool\(/g) ?? []).length;
     expect(toolCount).toBeLessThanOrEqual(14);
     expect(toolCount).toBeGreaterThanOrEqual(10);
+  });
+
+  it("MCP_TOOL_PROFILE=codex_locked exposes only context_status and context_pack", () => {
+    expect(toolsForProfile("codex_locked")).toEqual(["context_status", "context_pack"]);
+  });
+
+  it("MCP_TOOL_PROFILE=context_only exposes context broker tools", () => {
+    expect(toolsForProfile("context_only")).toEqual(["context_status", "context_pack", "impact_pack"]);
+  });
+
+  it("full profile still exposes all tools", () => {
+    expect(toolsForProfile("full")).toEqual(MCP_TOOL_NAMES);
   });
 
   it("tool descriptions enforce context-pack-first routing", () => {

@@ -24,7 +24,7 @@ export function capByBudget<T>(
   const working = structuredClone(payload) as T & Record<string, unknown>;
   let truncated = true;
 
-  for (const key of ["results", "neighbors", "matches", "paths", "files", "symbols", "nextSteps"]) {
+  for (const key of ["results", "neighbors", "matches", "paths", "files", "symbols", "docs", "assets", "concepts", "nextSteps"]) {
     const value = working[key];
     if (!Array.isArray(value) || value.length <= 1) {
       continue;
