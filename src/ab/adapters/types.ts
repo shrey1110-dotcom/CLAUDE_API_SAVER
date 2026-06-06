@@ -27,3 +27,12 @@ export interface CodexAdapterConfig {
   configArgs: string[];
   cwd: string;
 }
+
+export interface ClaudeAdapterConfig {
+  claudeBin: string;
+  baseArgs: string[];
+  promptArgMode: "stdin" | "dash_p" | "prompt-file-arg";
+  promptFileArgs?: string[];
+  configArgs: string[];
+  cwd: string;
+}

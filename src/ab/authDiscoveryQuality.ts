@@ -75,6 +75,13 @@ export function scoreAuthDiscoveryAnswer(text: string): AuthDiscoveryQualityScor
   };
 }
 
+function addMcpTool(tools: Set<string>, tool: string | undefined, server?: string): void {
+  if (!tool) return;
+  if (!server || server.includes("repo-context")) {
+    tools.add(tool);
+  }
+}
+
 export function extractMcpToolsFromCodexTranscript(text: string): string[] {
   const tools = new Set<string>();
   for (const line of text.split("\n")) {
@@ -83,16 +90,24 @@ export function extractMcpToolsFromCodexTranscript(text: string): string[] {
     try {
       const parsed = JSON.parse(trimmed) as {
         type?: string;
-        item?: { type?: string; tool?: string; server?: string };
+        item?: { type?: string; tool?: string; server?: string; name?: string };
+        tool?: string;
+        tool_name?: string;
+        mcp_tool?: string;
       };
-      if (parsed.type === "item.completed" && parsed.item?.type === "mcp_tool_call" && parsed.item.tool) {
-        if (!parsed.item.server || parsed.item.server.includes("repo-context")) {
-          tools.add(parsed.item.tool);
-        }
+      if (parsed.type === "item.completed" && parsed.item?.type === "mcp_tool_call") {
+        addMcpTool(tools, parsed.item.tool ?? parsed.item.name, parsed.item.server);
       }
+      addMcpTool(tools, parsed.tool ?? parsed.tool_name ?? parsed.mcp_tool);
+      const nested = parsed as { message?: { tool?: string; tool_name?: string } };
+      addMcpTool(tools, nested.message?.tool ?? nested.message?.tool_name);
     } catch {
       // Ignore non-JSON lines.
     }
   }
   return [...tools];
+}
+
+export function extractMcpToolsFromClaudeTranscript(text: string): string[] {
+  return extractMcpToolsFromCodexTranscript(text);
 }
