@@ -243,4 +243,3 @@ const isMain = process.argv[1]?.endsWith("claudeProofReport.js");
 if (isMain) {
   main();
 }
-// locked mode forbids graph + repo_map tools

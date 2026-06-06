@@ -270,4 +270,3 @@ const isMain = process.argv[1]?.endsWith("ingestClaudeRuns.js");
 if (isMain) {
   main();
 }
-// ingest reads latest batch per mode

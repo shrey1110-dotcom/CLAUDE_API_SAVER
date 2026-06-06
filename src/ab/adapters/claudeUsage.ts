@@ -204,4 +204,3 @@ export function mergeClaudeUsageWithTotal(usage: ParsedClaudeUsage): ParsedClaud
 export function estimateUsageFromTextLength(_text: string): ParsedClaudeUsage | null {
   return null;
 }
-// never infer tokens from transcript length

@@ -31,4 +31,3 @@ function main(): void {
 }
 
 main();
-// delegates verdict to assessRealCheck

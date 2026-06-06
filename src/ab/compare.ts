@@ -258,4 +258,3 @@ const isMain = process.argv[1]?.endsWith("compare.js");
 if (isMain) {
   main();
 }
-// isMain matches dist/compare.js suffix

@@ -378,4 +378,3 @@ const isMain = process.argv[1]?.endsWith("report.js");
 if (isMain) {
   main();
 }
-// isMain matches dist/report.js suffix
