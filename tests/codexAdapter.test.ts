@@ -221,8 +221,29 @@ describe("codex adapter", () => {
   });
 
   it("ab:codex ENOENT error gives actionable command", () => {
+    const cwd = makeTempDir();
+    tempDirs.push(cwd);
     process.env.AB_ENABLE_CODEX_ADAPTER = "1";
-    const missingBin = path.join(REPO_ROOT, ".mcp-ab-tests", "nonexistent-codex-binary-for-test");
+    fs.mkdirSync(path.join(cwd, ".mcp-ab-tests"), { recursive: true });
+    fs.writeFileSync(
+      path.join(cwd, ".mcp-ab-tests", "current-plan.json"),
+      JSON.stringify(
+        {
+          id: "plan-codex-enoent",
+          createdAt: new Date().toISOString(),
+          client: "codex",
+          repoPath: cwd,
+          taskName: "auth-discovery",
+          taskPrompt: "Find auth logic.",
+          modes: ["context_broker_locked"],
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    const missingBin = path.join(cwd, "nonexistent-codex-binary-for-test");
+    const lockedConfig = path.join(REPO_ROOT, "examples", "codex", "ab", "context-broker-locked.config.toml");
     const run = spawnSync(
       "node",
       [
@@ -232,10 +253,12 @@ describe("codex adapter", () => {
         "--repo",
         ".",
         "--yes",
+        "--config",
+        lockedConfig,
         "--codex-bin",
         missingBin,
       ],
-      { cwd: REPO_ROOT, encoding: "utf8" },
+      { cwd, encoding: "utf8" },
     );
     expect(run.status).not.toBe(0);
     const output = `${run.stderr}\n${run.stdout}`;

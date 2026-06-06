@@ -254,4 +254,7 @@ function main(): void {
   }
 }
 
-main();
+const isMain = process.argv[1]?.endsWith("compare.js");
+if (isMain) {
+  main();
+}

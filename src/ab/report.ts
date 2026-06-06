@@ -374,4 +374,7 @@ ${codexSection}
   console.log(`A/B report written to ${reportPath}`);
 }
 
-main();
+const isMain = process.argv[1]?.endsWith("report.js");
+if (isMain) {
+  main();
+}
