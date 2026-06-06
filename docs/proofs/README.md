@@ -33,6 +33,21 @@ repo-context-mcp context_broker_locked produced PROVEN_SAVINGS_STABLE on Codex C
 - Not proven for Cursor, Claude, Gemini, or other clients
 - Not proven against Graphify or other tools
 
+### Claude auth-discovery locked
+
+| Field | Value |
+|-------|-------|
+| Name | Claude auth-discovery locked proof |
+| Client | Claude Code CLI |
+| Task | `auth-discovery` |
+| Mode | `context_broker_locked` |
+| Tool profile | `MCP_TOOL_PROFILE=codex_locked` (alias: `locked`) |
+| Verdict | `NOT_STARTED` |
+
+**Doc:** [claude-auth-discovery-locked.md](claude-auth-discovery-locked.md)
+
+**Status:** Tooling ready (`ab:claude:*`). **Claude savings are not proven.**
+
 ## Failed runs (do not use as proof)
 
 | Run | Verdict | Doc |

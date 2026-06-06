@@ -46,6 +46,8 @@ If telemetry shows `repo_map`/`search_code` as dominant discovery tools, the cli
 
 ## Token savings test
 
+**Claude Desktop savings are not proven.** Use manual `ab:record` or file-context A/B (`ab:file-context:*`). For automated Claude Code proof tooling, see [claude-code.md](claude-code.md).
+
 See `docs/multi-client-ab-tests.md`.
 
 ## A/B quickstart for this client

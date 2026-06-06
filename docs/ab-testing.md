@@ -59,6 +59,24 @@ and quality is equal or better and routing is correct.
 
 **Codex auth-discovery locked proof is complete** (`PROVEN_SAVINGS_STABLE`). See [proofs/codex-auth-discovery-locked.md](proofs/codex-auth-discovery-locked.md). Full `context_broker` (D1) is exploratory only — it failed with `TOOL_LOOP_FAILURE`.
 
+## Claude locked context-broker mode
+
+Claude Code has Codex-level A/B tooling (`ab:claude:*`). **Claude savings are not proven.**
+
+Locked proof uses `MCP_TOOL_PROFILE=codex_locked` (alias: `locked`) — only `context_status` + `context_pack`. Do not use full `context_broker` for Claude proof.
+
+```bash
+npm run ab:claude:doctor
+npm run ab:claude:plan
+AB_ENABLE_CLAUDE_ADAPTER=1 npm run ab:claude -- --mode no_mcp --repo . --task auth-discovery --repeat 3 --yes
+AB_ENABLE_CLAUDE_ADAPTER=1 npm run ab:claude -- --mode context_broker_locked --repo . --task auth-discovery --repeat 3 --yes
+npm run ab:claude:ingest
+npm run ab:claude:report
+npm run ab:claude:real-check
+```
+
+If Claude CLI output lacks usage fields, use manual `ab:record` with real numbers. Never estimate tokens from transcript length. Proof doc: [proofs/claude-auth-discovery-locked.md](proofs/claude-auth-discovery-locked.md) — status `NOT_STARTED`.
+
 ## Recommended testing strategy
 
 - First test: **A vs D2** for Codex locked-mode proof.

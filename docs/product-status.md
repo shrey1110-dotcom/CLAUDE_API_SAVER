@@ -101,7 +101,7 @@ Tools like Graphify show the value of repository knowledge graphs, but **repo-co
 |------|--------|--------|
 | 1 | Codex locked proof (`context_broker_locked`, 3 repeats, auth-discovery) | **Complete** — `PROVEN_SAVINGS_STABLE` |
 | 2 | Run Cursor manual proof if usage numbers are available | Not started |
-| 3 | Run Claude Code proof | Not started |
+| 3 | Claude Code proof (`ab:claude:*` tooling + locked config) | Tooling ready — proof `NOT_STARTED` |
 | 4 | Run Gemini CLI proof | Not started |
 | 5 | Harder tasks: impact analysis, edit planning, architecture discovery, large repo onboarding | Not started |
 

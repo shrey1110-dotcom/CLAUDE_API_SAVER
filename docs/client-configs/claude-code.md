@@ -4,7 +4,9 @@
 
 Claude Code supports project MCP configuration via `.mcp.json` or CLI MCP settings (see Anthropic docs for your version).
 
-## Example
+**Claude savings are not proven.** Real parsed usage is required before any savings claim.
+
+## Full MCP example (exploratory)
 
 ```json
 {
@@ -26,11 +28,19 @@ Claude Code supports project MCP configuration via `.mcp.json` or CLI MCP settin
 }
 ```
 
+## Locked proof config (required for savings proof)
+
+Use `examples/claude-code/ab/context-broker-locked.mcp.json`:
+
+- `MCP_TOOL_PROFILE=codex_locked` (alias: `locked`)
+- Exposes **only** `context_status` + `context_pack`
+- Do **not** use full `context_broker` for Claude proof
+
 ## Verify
 
 Run `context_status` in a fresh session after building graph and context in the repo.
 
-## Recommended routing order
+## Recommended routing order (full toolset only)
 
 1. `context_status`
 2. `context_pack` with `budgetTokens: 1000`
@@ -39,18 +49,30 @@ Run `context_status` in a fresh session after building graph and context in the 
 5. `graph_query` / `graph_symbol` only if context is insufficient
 6. `search_code` / `repo_map` only as last-resort fallback
 
-If telemetry shows `repo_map`/`search_code` dominating discovery, update prompts/instructions to enforce context_pack-first behavior.
+For **locked proof**, only steps 1–2 are available by design.
 
-## Token savings test
+## Automated A/B (Codex-level tooling)
 
-See `docs/multi-client-ab-tests.md`.
+```bash
+npm run ab:claude:doctor
+npm run ab:claude:plan
+AB_ENABLE_CLAUDE_ADAPTER=1 npm run ab:claude -- --mode no_mcp --repo . --task auth-discovery --repeat 3 --yes
+AB_ENABLE_CLAUDE_ADAPTER=1 npm run ab:claude -- --mode context_broker_locked --repo . --task auth-discovery --repeat 3 --yes
+npm run ab:claude:ingest
+npm run ab:claude:report
+npm run ab:claude:real-check
+```
 
-## A/B quickstart for this client
+Requires `AB_ENABLE_CLAUDE_ADAPTER=1` and `--yes`. Optional: `--claude-bin /absolute/path/to/claude`.
+
+If Claude CLI output lacks usage fields, record real usage manually with `npm run ab:record` before `ab:claude:real-check`. **Never estimate tokens from transcript length.**
+
+Proof doc: [proofs/claude-auth-discovery-locked.md](../proofs/claude-auth-discovery-locked.md)
+
+## Manual fallback
 
 1. Run no-MCP baseline.
-2. Run context broker mode (`context_status` + `context_pack` first).
-3. Record token/cost/quality numbers manually from Claude Code outputs.
-4. Generate report via `npm run ab:report`.
-5. Apply verdict from `npm run ab:compare`.
-
-This project does not assume Claude Code usage can be auto-read unless you configure an adapter.
+2. Run locked broker (`context_status` + `context_pack` only).
+3. Record token/cost/quality from Claude Code outputs.
+4. `npm run ab:record` with real usage numbers.
+5. `npm run ab:claude:report` and `npm run ab:claude:real-check`.
