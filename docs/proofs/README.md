@@ -67,4 +67,5 @@ repo-context-mcp context_broker_locked produced PROVEN_SAVINGS_STABLE on Codex C
 
 - [product-status.md](../product-status.md)
 - [handoffs/cursor-continuation-after-codex-proof.md](../handoffs/cursor-continuation-after-codex-proof.md)
+- [handoffs/external-claude-tester.md](../handoffs/external-claude-tester.md)
 - [next-benchmark-phase.md](../next-benchmark-phase.md)

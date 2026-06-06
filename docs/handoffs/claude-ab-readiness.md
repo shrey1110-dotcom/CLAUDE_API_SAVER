@@ -1,8 +1,10 @@
 # Claude A/B readiness checklist
 
-Last updated: 2026-06-04
+Last updated: 2026-06-06
 
 Codex-level readiness for Claude Code locked auth-discovery proof (tooling only — no live proof yet).
+
+**External tester handoff:** [external-claude-tester.md](external-claude-tester.md)
 
 ## Checklist
 
