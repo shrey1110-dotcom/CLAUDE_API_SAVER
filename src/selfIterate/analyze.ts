@@ -7,7 +7,14 @@ import { readTelemetryEntries } from "../telemetry/reader.js";
 import type { SelfIterateAnalysis, SelfIterateFinding } from "./types.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const FAILED_LOG = path.join(ROOT, ".mcp-ab-tests", "failed-runs", "codex-full-context-logs.jsonl");
+
+function resolveFailedCodexLog(root: string): string | null {
+  const runtimeLog = path.join(root, ".mcp-ab-tests", "failed-runs", "codex-full-context-logs.jsonl");
+  if (fs.existsSync(runtimeLog)) return runtimeLog;
+  const fixtureLog = path.join(root, "tests/fixtures/codex-full-context-failure.jsonl");
+  if (fs.existsSync(fixtureLog)) return fixtureLog;
+  return null;
+}
 
 function readJsonDir(dir: string): unknown[] {
   if (!fs.existsSync(dir)) return [];
@@ -27,8 +34,9 @@ function readJsonDir(dir: string): unknown[] {
 export function analyzeSelfIteration(root = ROOT): SelfIterateAnalysis {
   const findings: SelfIterateFinding[] = [];
 
-  if (fs.existsSync(FAILED_LOG)) {
-    const failed = analyzeFailedCodexLog(FAILED_LOG);
+  const failedLog = resolveFailedCodexLog(root);
+  if (failedLog) {
+    const failed = analyzeFailedCodexLog(failedLog);
     if (failed.toolLoop.toolLoopFailure) {
       findings.push({
         id: "tool-loop-failure",
