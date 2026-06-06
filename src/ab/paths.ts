@@ -12,6 +12,8 @@ export const AB_LATEST_COMPARISON_FILE = path.join(AB_REPORTS_DIR, "latest-ab-co
 export const AB_COMMAND_ADAPTER_CONFIG = path.join(AB_DIR, "client-adapter.json");
 export const AB_CODEX_ADAPTER_CONFIG = path.join(AB_DIR, "codex-adapter.json");
 export const AB_CODEX_RUNS_DIR = path.join(AB_DIR, "codex-runs");
+export const AB_CLAUDE_ADAPTER_CONFIG = path.join(AB_DIR, "claude-adapter.json");
+export const AB_CLAUDE_RUNS_DIR = path.join(AB_DIR, "claude-runs");
 
 export function resolveAbPath(relPath: string): string {
   return path.resolve(relPath);
@@ -22,6 +24,7 @@ export function ensureAbDirectories(): void {
   fs.mkdirSync(resolveAbPath(AB_RESULTS_DIR), { recursive: true });
   fs.mkdirSync(resolveAbPath(AB_REPORTS_DIR), { recursive: true });
   fs.mkdirSync(resolveAbPath(AB_CODEX_RUNS_DIR), { recursive: true });
+  fs.mkdirSync(resolveAbPath(AB_CLAUDE_RUNS_DIR), { recursive: true });
 }
 
 export function writeJsonFile(relPath: string, value: unknown): void {

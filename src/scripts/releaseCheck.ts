@@ -62,6 +62,37 @@ add(
   ),
   "package.json scripts",
 );
+add(
+  "Claude A/B scripts",
+  [
+    "ab:claude",
+    "ab:claude:doctor",
+    "ab:claude:plan",
+    "ab:claude:ingest",
+    "ab:claude:report",
+    "ab:claude:real-check",
+  ].every((name) => Boolean(scripts[name])),
+  "package.json scripts",
+);
+add(
+  "Claude locked config",
+  exists("examples/claude-code/ab/context-broker-locked.mcp.json") &&
+    readText("examples/claude-code/ab/context-broker-locked.mcp.json").includes("MCP_TOOL_PROFILE"),
+  "examples/claude-code/ab/context-broker-locked.mcp.json",
+);
+add(
+  "Claude proof doc",
+  exists("docs/proofs/claude-auth-discovery-locked.md"),
+  "docs/proofs/claude-auth-discovery-locked.md",
+);
+add(
+  "Claude docs disclaim savings",
+  exists("docs/client-configs/claude-code.md") &&
+    readText("docs/client-configs/claude-code.md").toLowerCase().includes("not proven"),
+  "docs/client-configs/claude-code.md",
+);
+add("Claude usage tests", exists("tests/claudeUsage.test.ts"), "tests/claudeUsage.test.ts");
+add("Claude adapter tests", exists("tests/claudeAdapter.test.ts"), "tests/claudeAdapter.test.ts");
 add("telemetry context test script", Boolean(scripts["telemetry:context-test"]), "package.json scripts");
 add("codex doctor script", Boolean(scripts["codex:doctor"]), "package.json scripts");
 add("codex proof instructions script", Boolean(scripts["codex:proof:locked:instructions"]), "package.json scripts");

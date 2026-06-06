@@ -68,12 +68,18 @@
     "ab:codex:qa:real-check": "node dist/ab/codexQa/realCheckCli.js",
     "ab:ingest-codex": "node dist/ab/ingestCodexRuns.js",
     "ab:proof-report": "node dist/ab/codexProofReport.js",
+    "ab:claude": "node dist/ab/adapters/claudeCli.js",
+    "ab:claude:doctor": "node dist/scripts/claudeDoctor.js",
+    "ab:claude:plan": "node dist/ab/claudePlan.js",
+    "ab:claude:ingest": "node dist/ab/ingestClaudeRuns.js",
+    "ab:claude:report": "node dist/ab/claudeProofReport.js",
+    "ab:claude:real-check": "node dist/ab/claudeRealCheckCli.js",
     "ab:file-context:instructions": "node dist/scripts/fileContextAbInstructions.js",
     "ab:file-context:create": "node dist/ab/fileContext/createPlan.js",
     "ab:file-context:record": "node dist/ab/fileContext/recordResult.js",
     "ab:file-context:report": "node dist/ab/fileContext/reportCli.js",
     "ab:file-context:compare": "node dist/ab/fileContext/compareCli.js",
-    "test:ab": "npm run build && vitest run tests/ab.test.ts tests/fileContextAb.test.ts tests/codexAdapter.test.ts tests/authDiscoveryQuality.test.ts tests/codexCliSupport.test.ts tests/failedCodexAnalyze.test.ts tests/toolLoopPolicy.test.ts tests/codexQa.test.ts"
+    "test:ab": "npm run build && vitest run tests/ab.test.ts tests/fileContextAb.test.ts tests/codexAdapter.test.ts tests/authDiscoveryQuality.test.ts tests/codexCliSupport.test.ts tests/failedCodexAnalyze.test.ts tests/toolLoopPolicy.test.ts tests/codexQa.test.ts tests/claudeUsage.test.ts tests/claudeAdapter.test.ts tests/claudeCliSupport.test.ts tests/claudeProofReport.test.ts"
   },
   "engines": {
     "node": ">=18"
