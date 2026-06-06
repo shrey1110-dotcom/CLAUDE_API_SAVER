@@ -26,6 +26,7 @@ jobs:
       - run: npm run test:graph
       - run: npm run test:context
       - run: npm run test:client
+      - run: npm run test:ab
       - run: npm run benchmark:context
       - run: npm run compat:report
       - run: npm run doctor
