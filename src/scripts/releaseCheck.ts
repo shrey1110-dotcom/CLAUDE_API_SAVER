@@ -93,6 +93,33 @@ add(
 );
 add("Claude usage tests", exists("tests/claudeUsage.test.ts"), "tests/claudeUsage.test.ts");
 add("Claude adapter tests", exists("tests/claudeAdapter.test.ts"), "tests/claudeAdapter.test.ts");
+add(
+  "compression benchmark script",
+  Boolean(scripts["benchmark:compression"]),
+  "package.json scripts",
+);
+add(
+  "compression benchmark tests",
+  exists("tests/compressionBenchmark.test.ts"),
+  "tests/compressionBenchmark.test.ts",
+);
+add(
+  "graphify head-to-head protocol",
+  exists("docs/benchmarks/graphify-head-to-head.md"),
+  "docs/benchmarks/graphify-head-to-head.md",
+);
+add(
+  "benchmarks doc distinguishes metrics",
+  exists("docs/benchmarks.md") &&
+    readText("docs/benchmarks.md").toLowerCase().includes("diagnostic compression") &&
+    readText("docs/benchmarks.md").toLowerCase().includes("real a/b"),
+  "docs/benchmarks.md",
+);
+add(
+  "no Graphify superiority claim",
+  !readText("docs/product-status.md").toLowerCase().match(/beat graphify|better than graphify/),
+  "docs/product-status.md",
+);
 add("telemetry context test script", Boolean(scripts["telemetry:context-test"]), "package.json scripts");
 add("codex doctor script", Boolean(scripts["codex:doctor"]), "package.json scripts");
 add("codex proof instructions script", Boolean(scripts["codex:proof:locked:instructions"]), "package.json scripts");
@@ -104,6 +131,7 @@ add("smoke script", exists("dist/scripts/smokeMcp.js"), "dist/scripts/smokeMcp.j
 add(".repo-context-graph ignored", gitignore.includes(".repo-context-graph"), "gitignore");
 add(".mcp-telemetry ignored", gitignore.includes(".mcp-telemetry"), "gitignore");
 add(".mcp-ab-tests ignored", gitignore.includes(".mcp-ab-tests"), "gitignore");
+add(".mcp-benchmarks ignored", gitignore.includes(".mcp-benchmarks"), "gitignore");
 const publishedFiles = (pkg.files ?? []) as string[];
 add(
   "A/B generated artifacts not published",

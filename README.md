@@ -31,7 +31,9 @@ Not yet proven:
 - Not proven for all tasks.
 - Not proven for full `context_broker` mode.
 
-Next head-to-head benchmark: A no context, B Graphify, C repo-context-mcp locked broker.
+Next head-to-head benchmark: A no context, B Graphify, C repo-context-mcp locked broker. Protocol: [docs/benchmarks/graphify-head-to-head.md](docs/benchmarks/graphify-head-to-head.md).
+
+**Diagnostic compression** (raw repo tokens ÷ `context_pack` tokens) is comparable in shape to Graphify-style metrics but is **not proof of real agent savings**. Run `npm run benchmark:compression`. Real savings require `ab:real-check` with parsed client usage.
 
 ## What this is
 
@@ -60,6 +62,7 @@ npm run graph:build
 npm run context:build
 npm run doctor
 npm run benchmark:context
+npm run benchmark:compression
 ```
 
 ## Build graph and context

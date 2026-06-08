@@ -1,6 +1,6 @@
 # Product status
 
-Last updated: 2026-06-05
+Last updated: 2026-06-06
 
 ## 1. Current product summary
 
@@ -65,7 +65,20 @@ Only the following are supported claims:
 
 Proof details: [proofs/codex-auth-discovery-locked.md](proofs/codex-auth-discovery-locked.md) · Index: [proofs/README.md](proofs/README.md) · Report: `.mcp-ab-tests/reports/codex-locked-proof-report.md`
 
-## 4. Not yet proven
+## 4. Diagnostic compression vs real A/B savings
+
+| Metric | What it measures | Proof grade? |
+| --- | --- | --- |
+| **Diagnostic compression** | `full_raw_repo_tokens / context_pack_tokens` (Graphify-comparable shape) | No — run `npm run benchmark:compression` |
+| **Real A/B savings** | Parsed no-MCP vs locked broker client usage + MCP output | Yes — only when `ab:real-check` passes |
+
+- repo-context-mcp has **proven real Codex savings** for auth-discovery (`PROVEN_SAVINGS_STABLE`)
+- repo-context-mcp does **not** yet have a published diagnostic compression ratio benchmarked against Graphify's 71.5× Karpathy corpus claim
+- repo-context-mcp has **not** beaten Graphify in a same-repo head-to-head
+
+See [benchmarks.md](benchmarks.md) and [benchmarks/graphify-head-to-head.md](benchmarks/graphify-head-to-head.md).
+
+## 5. Not yet proven
 
 Do **not** claim:
 
@@ -76,7 +89,7 @@ Do **not** claim:
 - Multimodal extraction quality in large real-world repos
 - Savings for arbitrary repositories or production codebases without running the same proof gate
 
-## 5. Positioning
+## 6. Positioning
 
 **repo-context-mcp is broker-first, not graph-first.**
 
@@ -89,13 +102,13 @@ Label: **experimental context compression infrastructure**.
 
 Do not claim general token savings. The only allowed savings claim is the scoped Codex CLI auth-discovery locked proof above. Require users to run `ab:real-check` for their client/task.
 
-## 6. Competitive note
+## 7. Competitive note
 
 We do not frame repo-context-mcp as a Graphify clone.
 
 Tools like Graphify show the value of repository knowledge graphs, but **repo-context-mcp** focuses on broker-first delivery, locked routing, and proof-driven token evaluation.
 
-## 7. Proof roadmap
+## 8. Proof roadmap
 
 | Step | Action | Status |
 |------|--------|--------|
@@ -105,7 +118,7 @@ Tools like Graphify show the value of repository knowledge graphs, but **repo-co
 | 4 | Run Gemini CLI proof | Not started |
 | 5 | Harder tasks: impact analysis, edit planning, architecture discovery, large repo onboarding | Not started |
 
-## 8. Next head-to-head benchmark
+## 9. Next head-to-head benchmark
 
 Run a direct three-way benchmark with the same repo, task, model/settings, repeat count, quality rubric, and real usage totals:
 
@@ -113,7 +126,7 @@ Run a direct three-way benchmark with the same repo, task, model/settings, repea
 - B: Graphify
 - C: repo-context-mcp locked broker
 
-## 9. Release recommendation
+## 10. Release recommendation
 
 - **Label:** experimental
 - **Claim:** context compression infrastructure with one scoped Codex CLI proof
