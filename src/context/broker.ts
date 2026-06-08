@@ -6,28 +6,23 @@ import { searchCodeTool } from "../tools/searchCode.js";
 import { getGraphCachePaths } from "../graph/paths.js";
 import { findCapsuleForTask, loadCapsules, loadContextManifest } from "./loadContext.js";
 import { rankMultimodalForTask } from "./multimodalRank.js";
+import {
+  AUTH_EXPANSIONS,
+  collectOnboardingAnchorFiles,
+  collectTestHarnessFiles,
+  detectTaskIntent,
+  expandTaskTerms,
+  extractTaskConcepts,
+  isLowValuePackPath,
+  multimodalLimits,
+  normalizeTerms,
+  shouldUseAuthCapsuleFilter,
+  type TaskIntent,
+} from "./taskIntent.js";
 import type { ContextMode, ContextPackResult, ContextStatus, ImpactPackResult } from "./types.js";
 
-const AUTH_TERMS = ["auth", "authentication", "login", "session"];
-const AUTH_EXPANSIONS = [
-  "user session",
-  "auth controller",
-  "session service",
-  "login page",
-  "validate login",
-  "create session",
-];
-
-function normalizeTerms(text: string): string[] {
-  return text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean);
-}
-
-function isAuthTask(task: string): boolean {
-  const terms = normalizeTerms(task);
-  return terms.some((term) => AUTH_TERMS.includes(term));
+function shouldBoostAuthFiles(intent: TaskIntent): boolean {
+  return intent === "auth_focus" || intent === "session_edit";
 }
 
 function authArea(path: string): "simple" | "api" | "web" | "other" {
@@ -52,18 +47,24 @@ function authPathScore(path: string, text: string): number {
   return score;
 }
 
-function collectAuthGraphFiles(task: string, root: string | undefined, maxFiles: number): Array<{ path: string; reason: string; score: number }> {
+function collectAuthGraphFiles(
+  task: string,
+  root: string | undefined,
+  maxFiles: number,
+  intent: TaskIntent,
+): Array<{ path: string; reason: string; score: number }> {
   const graph = loadGraph(root);
   if (!graph) return [];
 
-  const terms = [...normalizeTerms(task), ...AUTH_EXPANSIONS.flatMap((item) => normalizeTerms(item))];
-  const termSet = new Set(terms);
+  const terms = expandTaskTerms(task, intent);
+  const authTerms = [...terms, ...AUTH_EXPANSIONS.flatMap((item) => normalizeTerms(item))];
+  const termSet = new Set(authTerms);
   const candidates = graph.nodes
     .filter((node) => node.type === "file" && typeof node.path === "string")
     .map((node) => {
       const path = node.path!;
       const text = `${node.name} ${node.summary ?? ""} ${(node.tags ?? []).join(" ")}`.toLowerCase();
-      const termHits = terms.reduce((count, term) => (text.includes(term) || path.toLowerCase().includes(term) ? count + 1 : count), 0);
+      const termHits = authTerms.reduce((count, term) => (text.includes(term) || path.toLowerCase().includes(term) ? count + 1 : count), 0);
       const score = authPathScore(path, text) + Math.min(termHits * 5, 25);
       return { path, score, reason: "auth-graph" as const };
     })
@@ -136,16 +137,18 @@ export function buildContextPack(input: {
   const symbols: ContextPackResult["symbols"] = [];
   const seenFiles = new Set<string>();
   const seenSymbols = new Set<string>();
-  const authTask = isAuthTask(input.task);
-  const maxFiles = authTask ? 8 : 12;
-  const maxSymbols = authTask ? 10 : 15;
+  const intent = detectTaskIntent(input.task, mode);
+  const authCapsuleFilter = shouldUseAuthCapsuleFilter(intent);
+  const maxFiles = intent === "auth_focus" ? 8 : intent === "onboarding" ? 10 : 12;
+  const maxSymbols = intent === "auth_focus" ? 10 : 15;
+  const graphTask = expandTaskTerms(input.task, intent).join(" ");
 
   const capsules = loadCapsules(input.root);
   const capsule = capsules ? findCapsuleForTask(capsules, input.task) : null;
 
   if (capsule) {
     for (const file of capsule.files) {
-      if (authTask && !/(auth|login|session|controller|service|page)/i.test(file)) continue;
+      if (authCapsuleFilter && !/(auth|login|session|controller|service|page)/i.test(file)) continue;
       if (seenFiles.has(file)) continue;
       seenFiles.add(file);
       files.push({ path: file, reason: `capsule:${capsule.topic}`, score: 85 });
@@ -159,14 +162,14 @@ export function buildContextPack(input: {
     }
   }
 
-  const graphQuery = queryGraph(input.task, {
+  const graphQuery = queryGraph(graphTask, {
     root: input.root,
-    maxResults: authTask ? 16 : 8,
+    maxResults: shouldBoostAuthFiles(intent) ? 16 : intent === "onboarding" ? 10 : 8,
     budgetTokens: Math.floor(budgetTokens / 2),
   });
 
   for (const result of graphQuery.results) {
-    if (result.path && !seenFiles.has(result.path)) {
+    if (result.path && !seenFiles.has(result.path) && !isLowValuePackPath(result.path)) {
       seenFiles.add(result.path);
       files.push({ path: result.path, reason: result.reason, score: result.score });
     }
@@ -185,8 +188,29 @@ export function buildContextPack(input: {
     }
   }
 
-  if (authTask) {
-    for (const candidate of collectAuthGraphFiles(input.task, input.root, maxFiles)) {
+  if (shouldBoostAuthFiles(intent)) {
+    for (const candidate of collectAuthGraphFiles(input.task, input.root, maxFiles, intent)) {
+      if (seenFiles.has(candidate.path) || isLowValuePackPath(candidate.path)) continue;
+      seenFiles.add(candidate.path);
+      files.push(candidate);
+    }
+  }
+
+  if (intent === "onboarding") {
+    for (const candidate of collectOnboardingAnchorFiles(input.root)) {
+      if (seenFiles.has(candidate.path)) continue;
+      seenFiles.add(candidate.path);
+      files.push(candidate);
+    }
+    for (const authCandidate of collectAuthGraphFiles(input.task, input.root, 4, "auth_focus")) {
+      if (seenFiles.has(authCandidate.path) || isLowValuePackPath(authCandidate.path)) continue;
+      seenFiles.add(authCandidate.path);
+      files.push({ ...authCandidate, score: 75, reason: "onboarding-auth-flow" });
+    }
+  }
+
+  if (intent === "session_edit" || (intent === "onboarding" && /\btests?\b/i.test(input.task))) {
+    for (const candidate of collectTestHarnessFiles(input.task, input.root)) {
       if (seenFiles.has(candidate.path)) continue;
       seenFiles.add(candidate.path);
       files.push(candidate);
@@ -194,9 +218,9 @@ export function buildContextPack(input: {
   }
 
   if (files.length < 3) {
-    const search = searchCodeTool(input.task.split(/\s+/)[0] ?? input.task, input.root, 5);
+    const search = searchCodeTool(graphTask.split(/\s+/)[0] ?? input.task, input.root, 5);
     for (const match of search.matches) {
-      if (!seenFiles.has(match.filePath)) {
+      if (!seenFiles.has(match.filePath) && !isLowValuePackPath(match.filePath)) {
         seenFiles.add(match.filePath);
         files.push({ path: match.filePath, reason: "search fallback", score: 40 });
       }
@@ -209,10 +233,16 @@ export function buildContextPack(input: {
   if (cmdResult.likelyLint) commandBlock.lint = cmdResult.likelyLint;
   if (cmdResult.likelyDev) commandBlock.dev = cmdResult.likelyDev;
 
-  const multimodal = rankMultimodalForTask(input.task, input.root);
-  const docs = multimodal.docs.length > 0 ? multimodal.docs : undefined;
-  const assets = multimodal.assets.length > 0 ? multimodal.assets : undefined;
-  const concepts = multimodal.concepts.length > 0 ? multimodal.concepts : undefined;
+  const limits = multimodalLimits(intent);
+  const multimodal = rankMultimodalForTask(graphTask, input.root);
+  const taskConcepts = extractTaskConcepts(input.task);
+  const mergedConcepts = [...taskConcepts, ...multimodal.concepts]
+    .filter((item, index, arr) => arr.findIndex((other) => other.name === item.name) === index)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limits.concepts);
+  const docs = multimodal.docs.length > 0 ? multimodal.docs.slice(0, limits.docs) : undefined;
+  const assets = multimodal.assets.length > 0 ? multimodal.assets.slice(0, limits.assets) : undefined;
+  const concepts = mergedConcepts.length > 0 ? mergedConcepts : undefined;
 
   const needsFullFileRead =
     mode === "edit" ||
@@ -235,7 +265,10 @@ export function buildContextPack(input: {
     mode,
     budgetTokens,
     summary,
-    files: files.sort((a, b) => b.score - a.score).slice(0, maxFiles),
+    files: files
+      .filter((file) => !isLowValuePackPath(file.path))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxFiles),
     symbols: symbols.slice(0, maxSymbols),
     docs,
     assets,
