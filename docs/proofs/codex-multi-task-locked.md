@@ -1,13 +1,13 @@
 # Codex Multi-Task Locked QA Report
 
-Generated: 2026-06-06T01:35:05.022Z
+Generated: 2026-06-11T00:46:06.428Z
 
 ## Aggregate
 
 - Aggregate verdict: INCOMPLETE_TEST
-- Tasks completed: 1/5
-- Tasks proven saved: 1
-- Tasks inconclusive: 4
+- Tasks completed: 2/5
+- Tasks proven saved: 2
+- Tasks inconclusive: 3
 - Tasks worse/regressed: 0
 
 ## Token Savings
@@ -15,7 +15,7 @@ Generated: 2026-06-06T01:35:05.022Z
 | Task | Verdict | No-MCP totals | Locked client totals | Locked MCP tokens | Locked combined totals | Mean savings | Median savings |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | auth-discovery | PROVEN_SAVINGS_STABLE | 210298, 450685, 273530 | 61790, 61827, 61674 | 867, 868, 868 | 62657, 62695, 62542 | 79.9% | 77.1% |
-| impact-analysis | INCOMPLETE_TEST | 1182210, 879664, 1265488 | - | - | - | - | - |
+| impact-analysis | PROVEN_SAVINGS_STABLE | 1182210, 879664, 1265488 | 62465, 62164, 62272 | 654, 654, 654 | 63119, 62818, 62926 | 94.3% | 94.7% |
 | edit-planning | INCOMPLETE_TEST | - | - | - | - | - | - |
 | architecture-discovery | INCOMPLETE_TEST | - | - | - | - | - | - |
 | onboarding-map | INCOMPLETE_TEST | - | - | - | - | - | - |
@@ -25,7 +25,7 @@ Generated: 2026-06-06T01:35:05.022Z
 | Task | No-MCP quality | Locked quality | Expected files/concepts pass | Notes |
 | --- | ---: | ---: | --- | --- |
 | auth-discovery | 9 | 10 | yes | auth-discovery scoring: files 5/5, concepts 6/6, categories 3/3. |
-| impact-analysis | 10 | 1 | no | impact-analysis scoring: files 0/8, concepts 0/7, categories 0/4. |
+| impact-analysis | 10 | 10 | yes | impact-analysis scoring: files 8/8, concepts 7/7, categories 4/4. |
 | edit-planning | - | - | no | - |
 | architecture-discovery | - | - | no | - |
 | onboarding-map | - | - | no | - |
@@ -34,11 +34,11 @@ Generated: 2026-06-06T01:35:05.022Z
 
 | Task | Markdown | JSON | Estimated tokens | Budget pass | File/concept pass |
 | --- | --- | --- | ---: | --- | --- |
-| auth-discovery | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/auth-discovery.md | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/auth-discovery.json | 818 | yes | yes |
-| impact-analysis | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/impact-analysis.md | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/impact-analysis.json | 833 | yes | yes |
-| edit-planning | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/edit-planning.md | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/edit-planning.json | 844 | yes | no |
-| architecture-discovery | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/architecture-discovery.md | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/architecture-discovery.json | 812 | yes | yes |
-| onboarding-map | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/onboarding-map.md | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/onboarding-map.json | 830 | yes | no |
+| auth-discovery | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/auth-discovery.md | /Users/shreyanshsharma/Downloads/Claude_api_saver/.context-packs/auth-discovery.json | 773 | yes | yes |
+| impact-analysis | - | - | - | no | no |
+| edit-planning | - | - | - | no | no |
+| architecture-discovery | - | - | - | no | no |
+| onboarding-map | - | - | - | no | no |
 
 ## Per-Task Details
 
@@ -55,9 +55,9 @@ Prompt: Find where authentication, login, or user session logic is implemented i
 
 Prompt: Find all files likely affected if session validation behavior changes. Include related tests, configs, API/frontend entry points, and risks. Do not edit files.
 
-- Verdict: INCOMPLETE_TEST
-- Reasons: missing context_broker_locked 3-repeat real usage
-- Routing tools: -
+- Verdict: PROVEN_SAVINGS_STABLE
+- Reasons: -
+- Routing tools: context_status, context_pack, context_status, context_pack, context_status, context_pack
 - Forbidden tools present: no
 
 ### edit-planning
