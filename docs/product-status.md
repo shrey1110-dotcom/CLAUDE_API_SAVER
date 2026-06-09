@@ -1,10 +1,12 @@
 # Product status
 
-Last updated: 2026-06-06
+Last updated: 2026-06-11
 
 ## 1. Current product summary
 
-**repo-context-mcp** is a universal MCP + CLI context broker for coding agents.
+**repo-context** is a coding-agent context skill and CLI context broker with **optional MCP** support.
+
+Default consumer workflow: `repo-context query` / `repo-context pack` (skill/CLI mode). MCP (`repo-context mcp`) is optional for live tool access.
 
 It builds deterministic local context intelligence from:
 
@@ -74,15 +76,17 @@ Proof details: [proofs/codex-auth-discovery-locked.md](proofs/codex-auth-discove
 
 - repo-context-mcp has **proven real Codex savings** for auth-discovery (`PROVEN_SAVINGS_STABLE`)
 - repo-context-mcp does **not** yet have a published diagnostic compression ratio benchmarked against Graphify's 71.5× Karpathy corpus claim
-- repo-context-mcp has **not** beaten Graphify in a same-repo head-to-head
+- One **diagnostic** Graphify Gemini head-to-head for auth-discovery is complete (Graphify 0.8.36): Graphify query 785 tokens, 0/5 files, 2/10 quality; repo-context `context_pack` 705 tokens, 5/5 files, 10/10 quality. Harness verdict: `DIAGNOSTIC_HEAD_TO_HEAD_COMPLETE_NO_REAL_USAGE_SUPERIORITY_CLAIM`. MCP-mode real usage comparison: no superiority claim.
+- **Skill-mode** head-to-head (auth-discovery, no MCP, supplied context, Codex CLI 0.137.0-alpha.4): verdict `SCOPED_SKILL_HEAD_TO_HEAD_SUPPORTS_REPO_CONTEXT`. Graphify median client tokens 22,212; repo-context median 21,371; quality 3–4/10 vs 10/10. **Scoped claim allowed** for this benchmark only.
+- **Best-effort skill head-to-head** (auth-discovery): repo-context context ~88% smaller than Graphify best-effort; local quality 9/10 vs 3/10; Codex median reduction ~7.3% (token-floor explains fixed overhead). Context-efficiency and end-to-end AI-cost benchmarks: `benchmark:context-efficiency`, `benchmark:token-floor`, `benchmark:end-to-end-ai-cost`.
 
-See [benchmarks.md](benchmarks.md) and [benchmarks/graphify-head-to-head.md](benchmarks/graphify-head-to-head.md).
+See [benchmarks.md](benchmarks.md), [benchmarks/graphify-head-to-head.md](benchmarks/graphify-head-to-head.md), and [benchmarks/skill-head-to-head.md](benchmarks/skill-head-to-head.md).
 
 ## 5. Not yet proven
 
 Do **not** claim:
 
-- Superiority over Graphify or any other tool
+- Universal superiority over Graphify outside the scoped skill-mode benchmark
 - Savings for Cursor, Claude, Gemini, or other clients
 - Savings across all tasks
 - Savings for full `context_broker` mode
@@ -91,14 +95,16 @@ Do **not** claim:
 
 ## 6. Positioning
 
-**repo-context-mcp is broker-first, not graph-first.**
+**repo-context is a coding-agent context skill with optional MCP.**
 
+- **Default workflow:** CLI/skill mode (`repo-context query`, `repo-context pack`)
+- **Optional:** MCP live tools (`repo-context mcp`)
 - The graph is an **internal intelligence layer**
-- **`context_pack` is the product interface**
+- **`context_pack` / skill pack output is the product interface**
 - **Locked profiles** prevent agent over-query loops
 - **A/B tooling** decides whether savings are real
 
-Label: **experimental context compression infrastructure**.
+Label: **context skill + optional MCP broker**.
 
 Do not claim general token savings. The only allowed savings claim is the scoped Codex CLI auth-discovery locked proof above. Require users to run `ab:real-check` for their client/task.
 
@@ -118,13 +124,14 @@ Tools like Graphify show the value of repository knowledge graphs, but **repo-co
 | 4 | Run Gemini CLI proof | Not started |
 | 5 | Harder tasks: impact analysis, edit planning, architecture discovery, large repo onboarding | Not started |
 
-## 9. Next head-to-head benchmark
+## 9. Graphify head-to-head status
 
-Run a direct three-way benchmark with the same repo, task, model/settings, repeat count, quality rubric, and real usage totals:
+| Step | Status |
+| --- | --- |
+| Diagnostic auth-discovery (Graphify Gemini vs repo-context `context_pack`) | **Complete** — no superiority claim |
+| Real client usage head-to-head (same repo/task/client/model, 3+ repeats/arm) | **Not started** |
 
-- A: no context
-- B: Graphify
-- C: repo-context-mcp locked broker
+Remaining for a proof-grade comparison: run arms A (no context), B (Graphify client), and C (repo-context locked broker) with parsed usage totals and equal/better quality gates.
 
 ## 10. Release recommendation
 
