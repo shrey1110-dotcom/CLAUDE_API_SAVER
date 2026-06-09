@@ -23,7 +23,21 @@ describe("task intent routing", () => {
     expect(phrases).toContain("expiration");
   });
 
-  it("edit-planning and onboarding-map packs are task-complete under 1000 tokens", () => {
+  it("impact-analysis pack includes impact anchors under 1000 tokens", () => {
+    const profile = getCodexQaTask("impact-analysis")!;
+    const pack = buildContextPack({ task: profile.prompt, root: repoRoot, mode: "impact", budgetTokens: 1000 });
+    const paths = new Set(pack.files.map((file) => file.path));
+    const serialized = JSON.stringify(pack);
+    expect(pack.estimatedOutputTokens ?? 0).toBeLessThanOrEqual(1000);
+    expect(paths.has("tests/context.test.ts")).toBe(true);
+    expect(paths.has("tests/tools.test.ts")).toBe(true);
+    expect(paths.has("package.json")).toBe(true);
+    expect(serialized).toContain("tests/tools.test.ts");
+    expect(serialized).toContain("session.service");
+    expect(serialized).toContain("auth.controller");
+  });
+
+  it("edit-planning and onboarding-map packs meet minimum rubric under 1000 tokens", () => {
     for (const taskName of ["edit-planning", "onboarding-map"] as const) {
       const profile = getCodexQaTask(taskName)!;
       const mode = taskName === "edit-planning" ? "edit" : "discovery";
