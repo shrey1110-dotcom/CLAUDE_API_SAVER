@@ -28,9 +28,10 @@ describe("client-agnostic packaging", () => {
     expect(source).not.toContain(".cursor/mcp.json");
   });
 
-  it("README describes broker-first context intelligence", () => {
+  it("README describes skill-first context broker positioning", () => {
     const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
-    expect(readme).toMatch(/broker-first context intelligence/i);
+    expect(readme).toMatch(/coding-agent context skill/i);
+    expect(readme).toMatch(/CLI\/skill workflow by default/i);
     expect(readme).toMatch(/Cursor|Codex|Claude/i);
     expect(readme).not.toMatch(/Graphify-inspired/i);
   });
