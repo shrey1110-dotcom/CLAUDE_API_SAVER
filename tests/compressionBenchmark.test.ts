@@ -69,6 +69,27 @@ describe("benchmark:compression", () => {
     expect(markdown).not.toMatch(/beat graphify/i);
   });
 
+  it("impact-analysis context_pack includes required impact anchors", () => {
+    const report = runCompressionBenchmark(REPO_ROOT);
+    const impact = report.tasks.find((task) => task.taskName === "impact-analysis");
+    expect(impact).toBeDefined();
+    expect(impact!.matchedFiles).toContain("tests/context.test.ts");
+    expect(impact!.matchedFiles).toContain("tests/tools.test.ts");
+    expect(impact!.matchedFiles).toContain("package.json");
+    expect(impact!.missingFiles).toHaveLength(0);
+    expect(impact!.taskComplete).toBe(true);
+    expect(impact!.contextPackTokens).toBeLessThanOrEqual(1000);
+  });
+
+  it("quality report does not mark file-missing tasks complete", () => {
+    const report = runCompressionBenchmark(REPO_ROOT);
+    for (const task of report.tasks) {
+      if (task.missingFiles.length > 0) {
+        expect(task.taskComplete).toBe(false);
+      }
+    }
+  });
+
   it("auth-discovery context_pack finds 5/5 expected files", () => {
     const report = runCompressionBenchmark(REPO_ROOT);
     const auth = report.tasks.find((task) => task.taskName === "auth-discovery");
