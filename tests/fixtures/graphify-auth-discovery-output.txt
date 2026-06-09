@@ -1,0 +1,14 @@
+Authentication and session logic in this repo:
+
+- tests/fixtures/simple-node-app/src/auth/login.ts — login handler and user authentication entry point
+- tests/fixtures/simple-node-app/src/auth/session.ts — session validation and user session storage
+- tests/fixtures/monorepo-app/packages/api/src/auth.controller.ts — API authentication controller with login/logout handlers
+- tests/fixtures/monorepo-app/packages/api/src/session.service.ts — SessionService for backend session management
+- tests/fixtures/monorepo-app/apps/web/src/LoginPage.tsx — frontend login page component
+
+Why each matters:
+- login.ts handles authentication and login flow for the simple app fixture.
+- session.ts implements user session logic and session validation.
+- auth.controller.ts exposes API endpoints for authentication.
+- session.service.ts centralizes session behavior on the API side.
+- LoginPage.tsx is the frontend entry point for login.
