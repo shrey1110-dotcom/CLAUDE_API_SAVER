@@ -1,6 +1,6 @@
 # Cursor continuation after Codex proof
 
-Last updated: 2026-06-05
+Last updated: 2026-06-10
 
 Handoff for continuing **repo-context-mcp** in Cursor after the scoped Codex locked proof milestone.
 
@@ -140,16 +140,22 @@ Locked benchmark: 2 tools, ~596 MCP tokens, 5/5 auth files, no fallback tools.
 | Failed full-context logs | `.mcp-ab-tests/failed-runs/codex-full-context-logs.jsonl` |
 | Locked transcript (repeat 1) | `.mcp-ab-tests/codex-runs/2026-06-05T05-53-59-079Z-context_broker_locked-1/transcript.md` |
 
-## 9. Next recommended work
+## 9. Graphify diagnostic head-to-head (complete)
+
+Auth-discovery diagnostic run with Graphify 0.8.36 (Gemini backend) is documented in [docs/benchmarks/graphify-head-to-head.md](../benchmarks/graphify-head-to-head.md). Harness verdict: `DIAGNOSTIC_HEAD_TO_HEAD_COMPLETE_NO_REAL_USAGE_SUPERIORITY_CLAIM`. No real Graphify client usage totals were recorded.
+
+**Security:** A Gemini API key was exposed in chat during this run. Rotate it in [Google AI Studio](https://aistudio.google.com/apikey) and keep `GEMINI_API_KEY` in the local shell only — never commit or paste into docs.
+
+## 10. Next recommended work
 
 See [docs/next-benchmark-phase.md](../next-benchmark-phase.md).
 
-1. **Cursor manual proof** — same auth-discovery task, locked profile, real usage totals
-2. **Harder task suite** — impact analysis, edit planning, architecture discovery
-3. **Client expansion** — Claude Code, Gemini CLI
-4. **Head-to-head** — no context vs Graphify vs repo-context-mcp locked (do not claim superiority until complete)
+1. **Real Graphify client usage head-to-head** — same repo/task/client/model, 3+ repeats, parsed totals
+2. **Cursor manual proof** — same auth-discovery task, locked profile, real usage totals
+3. **Harder task suite** — impact analysis, edit planning, architecture discovery
+4. **Client expansion** — Claude Code, Gemini CLI
 
-## 10. Key docs
+## 11. Key docs
 
 - [docs/product-status.md](../product-status.md)
 - [docs/broker-first-context-strategy.md](../broker-first-context-strategy.md)
