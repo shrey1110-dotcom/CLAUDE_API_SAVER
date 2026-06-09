@@ -48,6 +48,31 @@ describe("Codex multi-task QA suite", () => {
     expect(() => resolveCodexQaRunScope({ taskName: "missing-task" })).toThrow(/Unknown Codex QA task/);
   });
 
+  it("marks locked runs with missing telemetry as incomplete telemetry", async () => {
+    const { combineRuns } = await import("../src/ab/codexQa/suite.js");
+    const profile = CODEX_QA_TASKS[1];
+    const combined = combineRuns(profile, "context_broker_locked", [
+      {
+        runDir: "run-1",
+        mode: "context_broker_locked",
+        index: 1,
+        command: "codex",
+        args: [],
+        usageParsed: true,
+        clientTotalTokens: 100,
+        mcpToolsUsed: ["context_status", "context_pack"],
+        mcpToolCallCounts: { context_status: 1, context_pack: 1 },
+        mcpToolCalls: 2,
+        mcpTelemetryMissing: true,
+        quality: scoreCodexQaText(profile, "ok"),
+        stdoutPath: "stdout",
+        stderrPath: "stderr",
+        transcriptPath: "transcript",
+      },
+    ]);
+    expect(combined.mcpTelemetryComplete).toBe(false);
+  });
+
   it("counts only completed repo-context MCP tool calls", () => {
     const stdout = [
       JSON.stringify({
