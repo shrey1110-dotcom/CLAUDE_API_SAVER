@@ -292,10 +292,33 @@ function findStoredAuthBaseline(): { planId?: string; adapterOutputDir?: string 
   return null;
 }
 
-export function generateFileContextPacks(repoPath = process.cwd()): CodexQaFilePackResult[] {
+export function resolveCodexQaRunScope(options: {
+  taskName?: string;
+  mode?: "no_mcp" | "context_broker_locked";
+}): {
+  tasks: CodexQaTaskProfile[];
+  modes: Array<"no_mcp" | "context_broker_locked">;
+} {
+  const tasks = options.taskName
+    ? CODEX_QA_TASKS.filter((task) => task.taskName === options.taskName)
+    : CODEX_QA_TASKS;
+  if (options.taskName && tasks.length === 0) {
+    throw new Error(`Unknown Codex QA task: ${options.taskName}`);
+  }
+  const modes = options.mode ? [options.mode] : (["no_mcp", "context_broker_locked"] as const);
+  return { tasks, modes: [...modes] };
+}
+
+export function generateFileContextPacks(
+  repoPath = process.cwd(),
+  taskNames?: string[],
+): CodexQaFilePackResult[] {
   ensureCodexQaDirs();
+  const profiles = taskNames?.length
+    ? CODEX_QA_TASKS.filter((task) => taskNames.includes(task.taskName))
+    : CODEX_QA_TASKS;
   const results: CodexQaFilePackResult[] = [];
-  for (const profile of CODEX_QA_TASKS) {
+  for (const profile of profiles) {
     const pack = buildContextPack({ task: profile.prompt, root: repoPath, mode: "discovery", budgetTokens: 1000 });
     const mdPath = path.resolve(".context-packs", `${profile.taskName}.md`);
     const jsonPath = path.resolve(".context-packs", `${profile.taskName}.json`);
@@ -316,17 +339,29 @@ export function generateFileContextPacks(repoPath = process.cwd()): CodexQaFileP
   return results;
 }
 
-export async function runCodexQaSuite(options: { codexBin?: string; repoPath?: string; repeat?: number } = {}): Promise<CodexQaSuiteReport> {
+export async function runCodexQaSuite(
+  options: {
+    codexBin?: string;
+    repoPath?: string;
+    repeat?: number;
+    taskName?: string;
+    mode?: "no_mcp" | "context_broker_locked";
+  } = {},
+): Promise<CodexQaSuiteReport> {
   ensureCodexQaDirs();
   const suite = readCurrentQaSuite();
   const codexBin = options.codexBin ?? suite.codexBin ?? "codex";
   const repoPath = path.resolve(options.repoPath ?? suite.repoPath ?? process.cwd());
   const repeat = options.repeat ?? suite.repeat ?? REQUIRED_REPEATS;
-  generateFileContextPacks(repoPath);
+  const { tasks, modes } = resolveCodexQaRunScope(options);
+  generateFileContextPacks(
+    repoPath,
+    tasks.map((task) => task.taskName),
+  );
 
-  for (const profile of CODEX_QA_TASKS) {
+  for (const profile of tasks) {
     seedAuthDiscoveryBaseline(profile);
-    for (const mode of ["no_mcp", "context_broker_locked"] as const) {
+    for (const mode of modes) {
       const existing = resultFor(profile.taskName, mode);
       const existingRuns = existing?.repeats ?? [];
       if ((existing?.clientTotals.length ?? 0) >= repeat && existing?.usageParsed) {
@@ -640,12 +675,26 @@ export async function createCli(): Promise<void> {
   console.log(`Tasks: ${suite.taskNames.join(", ")}`);
 }
 
+function readQaModeArg(args: ReturnType<typeof parseCliArgs>): "no_mcp" | "context_broker_locked" | undefined {
+  const mode = readStringArg(args, "mode");
+  if (!mode) return undefined;
+  if (mode === "no_mcp" || mode === "context_broker_locked") return mode;
+  throw new Error("mode must be no_mcp or context_broker_locked");
+}
+
 export async function runCli(): Promise<void> {
   const args = parseCliArgs();
+  const taskName = readStringArg(args, "task");
+  const mode = readQaModeArg(args);
+  if (taskName || mode) {
+    console.log(`[codex-qa] Scoped run: task=${taskName ?? "all"} mode=${mode ?? "all"}`);
+  }
   const report = await runCodexQaSuite({
     codexBin: readStringArg(args, "codex-bin"),
     repoPath: readStringArg(args, "repo"),
     repeat: readNumberArg(args, "repeat") ?? REQUIRED_REPEATS,
+    taskName,
+    mode,
   });
   writeCodexQaReports(report);
   console.log(`aggregate_verdict=${report.aggregateVerdict}`);

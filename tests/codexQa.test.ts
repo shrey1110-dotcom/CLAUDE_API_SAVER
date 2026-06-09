@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CODEX_QA_TASKS } from "../src/ab/codexQa/profiles.js";
 import { scoreCodexQaText } from "../src/ab/codexQa/scoring.js";
-import { parseMcpToolCounts } from "../src/ab/codexQa/suite.js";
+import { parseMcpToolCounts, resolveCodexQaRunScope } from "../src/ab/codexQa/suite.js";
 
 describe("Codex multi-task QA suite", () => {
   it("defines the required five task profiles", () => {
@@ -36,6 +36,16 @@ describe("Codex multi-task QA suite", () => {
     );
     expect(score.passed).toBe(true);
     expect(score.qualityScore).toBeGreaterThanOrEqual(9);
+  });
+
+  it("scopes Codex QA runs to one task and mode", () => {
+    const scoped = resolveCodexQaRunScope({
+      taskName: "impact-analysis",
+      mode: "context_broker_locked",
+    });
+    expect(scoped.tasks.map((task) => task.taskName)).toEqual(["impact-analysis"]);
+    expect(scoped.modes).toEqual(["context_broker_locked"]);
+    expect(() => resolveCodexQaRunScope({ taskName: "missing-task" })).toThrow(/Unknown Codex QA task/);
   });
 
   it("counts only completed repo-context MCP tool calls", () => {
