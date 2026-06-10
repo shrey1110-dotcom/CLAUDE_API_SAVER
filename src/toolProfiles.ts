@@ -1,4 +1,12 @@
-export const MCP_TOOL_PROFILES = ["full", "context_only", "graph", "search", "codex_locked", "locked"] as const;
+export const MCP_TOOL_PROFILES = [
+  "full",
+  "context_only",
+  "graph",
+  "search",
+  "codex_locked",
+  "locked",
+  "broker_proof_min",
+] as const;
 
 export type McpToolProfile = (typeof MCP_TOOL_PROFILES)[number];
 
@@ -24,6 +32,7 @@ const PROFILE_TOOLS: Record<McpToolProfile, readonly McpToolName[]> = {
   context_only: ["context_status", "context_pack", "impact_pack"],
   codex_locked: ["context_status", "context_pack"],
   locked: ["context_status", "context_pack"],
+  broker_proof_min: ["context_status", "context_pack"],
   graph: ["graph_status", "graph_query", "graph_symbol", "graph_neighbors", "graph_paths"],
   search: ["repo_map", "search_code", "get_symbol_context", "get_project_commands"],
 };
