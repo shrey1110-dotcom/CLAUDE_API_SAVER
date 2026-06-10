@@ -1,6 +1,8 @@
-# repo-context-mcp
+# repo-context
 
-**Broker-first context intelligence layer for coding agents** — builds local repo intelligence and returns compact task-specific context packs through MCP, CLI, or files.
+**repo-context** is a coding-agent context skill that generates task-specific context packs for AI coding assistants. Use the **CLI/skill workflow by default**; **MCP is optional** for agents that want live tool access.
+
+Package name remains `repo-context-mcp` for compatibility. Binaries: `repo-context` and `repo-context-mcp`.
 
 Works with **Cursor**, **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
 
@@ -24,20 +26,31 @@ One real Codex proof is complete:
 
 Allowed claim: repo-context-mcp locked broker proved stable savings for Codex CLI auth-discovery in this repo. See [docs/proofs/codex-auth-discovery-locked.md](docs/proofs/codex-auth-discovery-locked.md).
 
+Skill-mode head-to-head (auth-discovery, no MCP, supplied context): `SCOPED_SKILL_HEAD_TO_HEAD_SUPPORTS_REPO_CONTEXT` — see [docs/benchmarks/skill-head-to-head.md](docs/benchmarks/skill-head-to-head.md). Scoped claim only; not a universal Graphify superiority claim.
+
+Best-effort skill benchmark (auth-discovery): repo-context ultra pack is ~89% smaller context than Graphify best-effort with 5/5 vs 1/5 files locally; Codex median reduction ~7.6% (fixed client overhead — see `npm run benchmark:token-floor`). Context-efficiency metrics: `npm run benchmark:context-efficiency`.
+
 Not yet proven:
 
-- Not proven against Graphify.
+- MCP-mode token superiority vs Graphify (different usage modes; not apples-to-apples).
 - Not proven for Cursor, Claude, Gemini, or other clients.
 - Not proven for all tasks.
 - Not proven for full `context_broker` mode.
 
-Next head-to-head benchmark: A no context, B Graphify, C repo-context-mcp locked broker. Protocol: [docs/benchmarks/graphify-head-to-head.md](docs/benchmarks/graphify-head-to-head.md).
+Graphify diagnostic head-to-head (auth-discovery, Graphify 0.8.36 Gemini): complete — diagnostic only, no superiority claim. Real client usage comparison not yet recorded. Protocol: [docs/benchmarks/graphify-head-to-head.md](docs/benchmarks/graphify-head-to-head.md).
 
 **Diagnostic compression** (raw repo tokens ÷ `context_pack` tokens) is comparable in shape to Graphify-style metrics but is **not proof of real agent savings**. Run `npm run benchmark:compression`. Real savings require `ab:real-check` with parsed client usage.
 
+## Usage modes
+
+| Mode | When to use |
+|------|-------------|
+| **Skill/CLI (default)** | `repo-context query` / `repo-context pack` — paste or pipe markdown into any assistant; avoids MCP client overhead |
+| **MCP (optional)** | `repo-context mcp` — live `context_status` + `context_pack` for MCP-capable agents |
+
 ## What this is
 
-A local, read-only MCP server and CLI that builds deterministic context intelligence (graph, capsules, multimodal metadata) offline, then answers agent requests with **`context_pack`** — compact, task-specific context instead of full file dumps or graph tool loops.
+A local, read-only context broker that builds deterministic repo intelligence (graph, capsules, multimodal metadata) offline, then answers with compact task-specific context packs instead of full file dumps or graph tool loops.
 
 ## What problem it solves
 
@@ -58,12 +71,17 @@ git clone https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git
 cd CLAUDE_API_SAVER   # or your fork path
 npm install
 npm run build
-npm run graph:build
-npm run context:build
+repo-context index .
+repo-context status
+repo-context pack "Where is auth implemented?" --budget 500 --format markdown
+repo-context install cursor
+repo-context install codex
 npm run doctor
 npm run benchmark:context
 npm run benchmark:compression
 ```
+
+Optional MCP: `repo-context mcp` (or configure as stdio MCP server via `repo-context-mcp`).
 
 ## Build graph and context
 
