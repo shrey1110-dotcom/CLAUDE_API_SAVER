@@ -109,6 +109,21 @@ add(
   "docs/benchmarks/graphify-head-to-head.md",
 );
 add(
+  "skill head-to-head protocol",
+  exists("docs/benchmarks/skill-head-to-head.md"),
+  "docs/benchmarks/skill-head-to-head.md",
+);
+add(
+  "repo-context CLI bin alias",
+  readText("package.json").includes('"repo-context": "dist/index.js"'),
+  "package.json bin.repo-context",
+);
+add(
+  "skill head-to-head script",
+  readText("package.json").includes("benchmark:skill-head-to-head"),
+  "package.json scripts",
+);
+add(
   "benchmarks doc distinguishes metrics",
   exists("docs/benchmarks.md") &&
     readText("docs/benchmarks.md").toLowerCase().includes("diagnostic compression") &&
