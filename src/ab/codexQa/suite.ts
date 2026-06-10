@@ -45,6 +45,19 @@ const LOCKED_FORBIDDEN_TOOLS = [
 
 const AUTH_BASELINE_REPEATS = [210_298, 450_685, 273_530];
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function readMcpTelemetryWithRetry(): Promise<ReturnType<typeof readMcpTelemetryForAb>> {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const telemetry = readMcpTelemetryForAb();
+    if (telemetry) return telemetry;
+    await sleep(100);
+  }
+  return null;
+}
+
 function nowId(): string {
   return `codex-qa-${Date.now()}`;
 }
@@ -62,7 +75,26 @@ function cleanTelemetry(): void {
   runCommand(process.execPath, ["dist/scripts/cleanTelemetry.js"], process.cwd());
 }
 
-function codexArgs(input: { mode: "no_mcp" | "context_broker_locked"; repoPath: string }): string[] {
+function qaResultKey(mode: "no_mcp" | "context_broker_locked", resultVariant?: string): string {
+  if (mode === "context_broker_locked" && resultVariant === "proof_min") {
+    return "context_broker_locked_proof_min";
+  }
+  return mode;
+}
+
+function mcpEnvForLockedRun(mcpProfile?: string, proofMin?: boolean): string {
+  if (proofMin || mcpProfile === "broker_proof_min") {
+    return '{MCP_TELEMETRY="1",MCP_OUTPUT_MODE="compact",MCP_TOOL_PROFILE="broker_proof_min",MCP_CONTEXT_PACK_MINIMAL="1",MCP_CONTEXT_PACK_BUDGET_TOKENS="450",MCP_CONTEXT_PACK_MAX_FILES="6",MCP_CONTEXT_PACK_MAX_SYMBOLS="6",MCP_MAX_RESPONSE_CHARS="4000",MCP_DEFAULT_SEARCH_RESULTS="5",MCP_TREE_DEPTH="2",MCP_SYMBOL_CONTEXT_LINES="14"}';
+  }
+  return '{MCP_TELEMETRY="1",MCP_OUTPUT_MODE="compact",MCP_TOOL_PROFILE="codex_locked",MCP_MAX_RESPONSE_CHARS="9000",MCP_DEFAULT_SEARCH_RESULTS="5",MCP_TREE_DEPTH="2",MCP_SYMBOL_CONTEXT_LINES="14"}';
+}
+
+function codexArgs(input: {
+  mode: "no_mcp" | "context_broker_locked";
+  repoPath: string;
+  mcpProfile?: string;
+  proofMin?: boolean;
+}): string[] {
   const args = [
     "-a",
     "never",
@@ -82,7 +114,7 @@ function codexArgs(input: { mode: "no_mcp" | "context_broker_locked"; repoPath: 
       "-c",
       `mcp_servers.repo-context-mcp.args=["${path.join(input.repoPath, "dist/index.js")}"]`,
       "-c",
-      'mcp_servers.repo-context-mcp.env={MCP_TELEMETRY="1",MCP_OUTPUT_MODE="compact",MCP_TOOL_PROFILE="codex_locked",MCP_MAX_RESPONSE_CHARS="9000",MCP_DEFAULT_SEARCH_RESULTS="5",MCP_TREE_DEPTH="2",MCP_SYMBOL_CONTEXT_LINES="14"}',
+      `mcp_servers.repo-context-mcp.env=${mcpEnvForLockedRun(input.mcpProfile, input.proofMin)}`,
       "-c",
       'mcp_servers.repo-context-mcp.default_tools_approval_mode="approve"',
       "-c",
@@ -123,7 +155,7 @@ async function runCodexOnce(input: {
       stderr += String(chunk);
     });
     child.on("error", (error) => reject(error));
-    child.on("close", (code) => {
+    child.on("close", async (code) => {
       fs.writeFileSync(stdoutPath, stdout, "utf8");
       fs.writeFileSync(stderrPath, stderr, "utf8");
       fs.writeFileSync(
@@ -139,8 +171,9 @@ async function runCodexOnce(input: {
 
       const usage = parseCodexUsageFromOutput(stdout, stderr);
       const mergedUsage = usage ? mergeUsageWithTotal(usage) : null;
-      const telemetry = input.mode === "context_broker_locked" ? readMcpTelemetryForAb() : null;
       const tools = parseMcpToolCounts(stdout);
+      const telemetry = input.mode === "context_broker_locked" ? await readMcpTelemetryWithRetry() : null;
+      const mcpTelemetryMissing = input.mode === "context_broker_locked" && Object.keys(tools).length > 0 && !telemetry;
       const quality = scoreCodexQaText(input.profile, `${stdout}\n${stderr}`);
       const run: CodexQaRunSummary = {
         runDir: input.runDir,
@@ -152,7 +185,13 @@ async function runCodexOnce(input: {
         clientInputTokens: mergedUsage?.clientInputTokens,
         clientOutputTokens: mergedUsage?.clientOutputTokens,
         clientTotalTokens: mergedUsage?.clientTotalTokens,
-        mcpEstimatedOutputTokens: telemetry?.estimatedMcpOutputTokens ?? 0,
+        mcpEstimatedOutputTokens: telemetry?.estimatedMcpOutputTokens,
+        mcpTelemetryMissing,
+        mcpTelemetryNote: mcpTelemetryMissing
+          ? "MCP tool calls appeared in the Codex transcript, but no telemetry summary was readable after retry."
+          : telemetry?.estimatedMcpOutputTokens === 0 && input.mode === "context_broker_locked"
+            ? "Telemetry was present and reported 0 estimated MCP output tokens."
+            : undefined,
         mcpToolsUsed: Object.keys(tools),
         mcpToolCallCounts: tools,
         mcpToolCalls: Object.values(tools).reduce((sum, count) => sum + count, 0),
@@ -212,18 +251,31 @@ export function readCurrentQaSuite(): CodexQaSuiteFile {
   return readJson<CodexQaSuiteFile>(CODEX_QA_CURRENT_SUITE) ?? createCodexQaSuite();
 }
 
-function resultFor(taskName: string, mode: "no_mcp" | "context_broker_locked"): CodexQaModeResult | null {
-  return readJson<CodexQaModeResult>(suiteResultPath(taskName, mode));
+function resultFor(
+  taskName: string,
+  mode: "no_mcp" | "context_broker_locked",
+  resultVariant?: string,
+): CodexQaModeResult | null {
+  return readJson<CodexQaModeResult>(suiteResultPath(taskName, qaResultKey(mode, resultVariant)));
 }
 
-function writeModeResult(result: CodexQaModeResult): void {
-  writeJson(suiteResultPath(result.taskName, result.mode), result);
+function writeModeResult(result: CodexQaModeResult, resultVariant?: string): void {
+  writeJson(suiteResultPath(result.taskName, qaResultKey(result.mode, resultVariant)), result);
 }
 
-function combineRuns(profile: CodexQaTaskProfile, mode: "no_mcp" | "context_broker_locked", runs: CodexQaRunSummary[]): CodexQaModeResult {
+export function combineRuns(profile: CodexQaTaskProfile, mode: "no_mcp" | "context_broker_locked", runs: CodexQaRunSummary[]): CodexQaModeResult {
   const clientTotals = runs.map((run) => run.clientTotalTokens).filter((value): value is number => typeof value === "number");
-  const mcpTokens = runs.map((run) => run.mcpEstimatedOutputTokens);
-  const combinedTotals = clientTotals.map((total, index) => total + (mcpTokens[index] ?? 0));
+  const mcpTokens = runs.map((run) => run.mcpEstimatedOutputTokens ?? 0);
+  const mcpTelemetryComplete =
+    mode !== "context_broker_locked" ||
+    runs.every((run) => !run.mcpTelemetryMissing && typeof run.mcpEstimatedOutputTokens === "number");
+  const combinedTotals = clientTotals.map((total, index) => {
+    const run = runs[index];
+    if (run?.mcpTelemetryMissing || typeof run?.mcpEstimatedOutputTokens !== "number") {
+      return total;
+    }
+    return total + run.mcpEstimatedOutputTokens;
+  });
   const quality = runs.length > 0
     ? runs.map((run) => run.quality).reduce((worst, current) => (current.qualityScore < worst.qualityScore ? current : worst))
     : scoreCodexQaText(profile, "");
@@ -233,6 +285,7 @@ function combineRuns(profile: CodexQaTaskProfile, mode: "no_mcp" | "context_brok
     repeats: runs,
     clientTotals,
     mcpTokens,
+    mcpTelemetryComplete,
     combinedTotals,
     usageParsed: clientTotals.length === runs.length && runs.length > 0,
     quality,
@@ -346,6 +399,9 @@ export async function runCodexQaSuite(
     repeat?: number;
     taskName?: string;
     mode?: "no_mcp" | "context_broker_locked";
+    mcpProfile?: string;
+    promptProfile?: string;
+    resultVariant?: string;
   } = {},
 ): Promise<CodexQaSuiteReport> {
   ensureCodexQaDirs();
@@ -362,7 +418,9 @@ export async function runCodexQaSuite(
   for (const profile of tasks) {
     seedAuthDiscoveryBaseline(profile);
     for (const mode of modes) {
-      const existing = resultFor(profile.taskName, mode);
+      const resultVariant = options.resultVariant;
+      const proofMin = resultVariant === "proof_min" || options.mcpProfile === "broker_proof_min";
+      const existing = resultFor(profile.taskName, mode, resultVariant);
       const existingRuns = existing?.repeats ?? [];
       if ((existing?.clientTotals.length ?? 0) >= repeat && existing?.usageParsed) {
         continue;
@@ -370,27 +428,31 @@ export async function runCodexQaSuite(
       const runs = [...existingRuns];
       const startIndex = runs.length + 1;
       const batch = new Date().toISOString().replace(/[:.]/g, "-");
+      const runLabel = qaResultKey(mode, resultVariant);
       for (let index = startIndex; index <= repeat; index += 1) {
         if (mode === "context_broker_locked") cleanTelemetry();
-        const runDir = path.join(suiteTaskDir(profile.taskName), `${batch}-${mode}-${index}`);
+        const runDir = path.join(suiteTaskDir(profile.taskName), `${batch}-${runLabel}-${index}`);
         try {
           const run = await runCodexOnce({
             codexBin,
-            args: codexArgs({ mode, repoPath }),
+            args: codexArgs({ mode, repoPath, mcpProfile: options.mcpProfile, proofMin }),
             cwd: repoPath,
-            prompt: promptForMode(profile, mode),
+            prompt: promptForMode(profile, mode, options.promptProfile),
             runDir,
             mode,
             index,
             profile,
           });
           runs.push(run);
-          writeModeResult(combineRuns(profile, mode, runs));
+          writeModeResult(combineRuns(profile, mode, runs), resultVariant);
         } catch (error) {
-          writeModeResult({
-            ...combineRuns(profile, mode, runs),
-            notes: `Partial result preserved after error: ${error instanceof Error ? error.message : String(error)}`,
-          });
+          writeModeResult(
+            {
+              ...combineRuns(profile, mode, runs),
+              notes: `Partial result preserved after error: ${error instanceof Error ? error.message : String(error)}`,
+            },
+            resultVariant,
+          );
           throw error;
         }
       }
@@ -400,9 +462,26 @@ export async function runCodexQaSuite(
   return buildSuiteReport(readCurrentQaSuite());
 }
 
-function promptForMode(profile: CodexQaTaskProfile, mode: "no_mcp" | "context_broker_locked"): string {
+function promptForMode(
+  profile: CodexQaTaskProfile,
+  mode: "no_mcp" | "context_broker_locked",
+  promptProfile?: string,
+): string {
   if (mode === "no_mcp") {
     return `${profile.prompt}\n\nAfter answering, list the files you inspected or read.`;
+  }
+  if (promptProfile === "minimal") {
+    return `Locked repo-context-mcp only.
+1. context_status once.
+2. context_pack once with budgetTokens 450.
+3. No graph/search/symbol tools. No file reads.
+
+Do not edit files.
+
+Task: ${profile.prompt}
+
+Reply in <=12 lines: exact files, key functions/symbols, one-line why each matters.
+End with: MCP tools used; context_pack sufficient (yes/no).`;
   }
   return `Use repo-context-mcp in locked context-broker mode.
 
@@ -479,6 +558,9 @@ function evaluateTask(
   }
   if (!locked || locked.clientTotals.length < REQUIRED_REPEATS || !locked.usageParsed) {
     reasons.push(`missing context_broker_locked ${REQUIRED_REPEATS}-repeat real usage`);
+  }
+  if (locked && locked.mcpTelemetryComplete === false) {
+    reasons.push("locked repeat missing readable MCP telemetry (do not treat as 0 tokens)");
   }
   const routingFailure = locked ? lockedRoutingFailure(locked) : null;
   if (routingFailure) reasons.push(routingFailure);
@@ -686,8 +768,13 @@ export async function runCli(): Promise<void> {
   const args = parseCliArgs();
   const taskName = readStringArg(args, "task");
   const mode = readQaModeArg(args);
-  if (taskName || mode) {
-    console.log(`[codex-qa] Scoped run: task=${taskName ?? "all"} mode=${mode ?? "all"}`);
+  const mcpProfile = readStringArg(args, "mcp-profile") ?? readStringArg(args, "profile");
+  const promptProfile = readStringArg(args, "prompt-profile");
+  const resultVariant = readStringArg(args, "result-variant");
+  if (taskName || mode || mcpProfile || promptProfile || resultVariant) {
+    console.log(
+      `[codex-qa] Scoped run: task=${taskName ?? "all"} mode=${mode ?? "all"} mcpProfile=${mcpProfile ?? "default"} promptProfile=${promptProfile ?? "default"} variant=${resultVariant ?? "default"}`,
+    );
   }
   const report = await runCodexQaSuite({
     codexBin: readStringArg(args, "codex-bin"),
@@ -695,6 +782,9 @@ export async function runCli(): Promise<void> {
     repeat: readNumberArg(args, "repeat") ?? REQUIRED_REPEATS,
     taskName,
     mode,
+    mcpProfile,
+    promptProfile,
+    resultVariant,
   });
   writeCodexQaReports(report);
   console.log(`aggregate_verdict=${report.aggregateVerdict}`);
@@ -725,4 +815,3 @@ export async function realCheckCli(): Promise<void> {
 }
 
 export { CODEX_QA_TASKS };
-
