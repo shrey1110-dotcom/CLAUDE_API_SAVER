@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { isCliInvocation, runCli } from "./cli/router.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -211,10 +212,21 @@ if (expose("repo_map")) server.tool(
   async ({ root }) => handleTool("repo_map", { root }, () => repoMap(root)),
 );
 
-async function main() {
+async function startMcpServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("[repo-context-mcp] ready on stdio v0.1.0");
+}
+
+async function main() {
+  if (isCliInvocation()) {
+    const command = process.argv[2];
+    if (command !== "mcp") {
+      const code = await runCli();
+      process.exit(code);
+    }
+  }
+  await startMcpServer();
 }
 
 main().catch((error) => {
