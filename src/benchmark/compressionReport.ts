@@ -79,7 +79,8 @@ export function runCompressionBenchmark(root: string): CompressionReport {
     const outputBudgetPass = contextPackTokens <= COMPRESSION_BUDGET_TOKENS;
     const expectedFilesFound = score?.expectedFilesFound ?? false;
     const expectedConceptsFound = score?.expectedConceptsFound ?? false;
-    const taskComplete = expectedFilesFound && expectedConceptsFound && outputBudgetPass;
+    const allExpectedFilesPresent = (score?.missingFiles.length ?? task.expectedFilePatterns.length) === 0;
+    const taskComplete = allExpectedFilesPresent && expectedConceptsFound && outputBudgetPass;
 
     return {
       taskName: task.taskName,
