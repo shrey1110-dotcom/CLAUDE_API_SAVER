@@ -26,7 +26,9 @@ export interface CodexQaRunSummary {
   clientInputTokens?: number;
   clientOutputTokens?: number;
   clientTotalTokens?: number;
-  mcpEstimatedOutputTokens: number;
+  mcpEstimatedOutputTokens?: number;
+  mcpTelemetryMissing?: boolean;
+  mcpTelemetryNote?: string;
   mcpToolsUsed: string[];
   mcpToolCallCounts: Record<string, number>;
   mcpToolCalls: number;
@@ -42,6 +44,7 @@ export interface CodexQaModeResult {
   repeats: CodexQaRunSummary[];
   clientTotals: number[];
   mcpTokens: number[];
+  mcpTelemetryComplete?: boolean;
   combinedTotals: number[];
   usageParsed: boolean;
   quality: CodexQaScore;
@@ -86,4 +89,3 @@ export interface CodexQaSuiteReport {
   tasks: CodexQaTaskResult[];
   aggregateVerdict: CodexQaAggregateVerdict;
 }
-
