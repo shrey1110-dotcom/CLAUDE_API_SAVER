@@ -14,9 +14,21 @@ export interface McpConfig {
   searchContextPadding: number;
   searchContextLines: number;
   maxTreeEntriesPerDir: number;
+  contextPackMinimal: boolean;
+  contextPackBudgetTokens: number;
+  contextPackMaxFiles: number;
+  contextPackMaxSymbols: number;
 }
 
-type ModeDefaults = Omit<McpConfig, "outputMode" | "toolProfile">;
+type ModeDefaults = Omit<
+  McpConfig,
+  | "outputMode"
+  | "toolProfile"
+  | "contextPackMinimal"
+  | "contextPackBudgetTokens"
+  | "contextPackMaxFiles"
+  | "contextPackMaxSymbols"
+>;
 
 const COMPACT_DEFAULTS: ModeDefaults = {
   maxResponseChars: 9000,
@@ -111,6 +123,10 @@ export function getConfig(): McpConfig {
     searchContextPadding: searchPadding,
     searchContextLines,
     maxTreeEntriesPerDir: modeDefaults.maxTreeEntriesPerDir,
+    contextPackMinimal: process.env.MCP_CONTEXT_PACK_MINIMAL === "1",
+    contextPackBudgetTokens: parsePositiveInt(process.env.MCP_CONTEXT_PACK_BUDGET_TOKENS, 1000, 300, 2500),
+    contextPackMaxFiles: parsePositiveInt(process.env.MCP_CONTEXT_PACK_MAX_FILES, 6, 3, 12),
+    contextPackMaxSymbols: parsePositiveInt(process.env.MCP_CONTEXT_PACK_MAX_SYMBOLS, 6, 2, 15),
   };
 
   return cached;
