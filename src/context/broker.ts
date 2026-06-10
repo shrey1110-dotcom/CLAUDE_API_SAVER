@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { getConfig } from "../config.js";
 import { clampBudgetTokens, capByBudget } from "../shared/budget.js";
 import { getGraphStatus, loadGraph, queryGraph } from "../graph/queryGraph.js";
 import { getProjectCommands } from "../tools/getProjectCommands.js";
@@ -8,8 +9,11 @@ import { findCapsuleForTask, loadCapsules, loadContextManifest } from "./loadCon
 import { rankMultimodalForTask } from "./multimodalRank.js";
 import {
   AUTH_EXPANSIONS,
+  collectImpactAnalysisAnchors,
   collectOnboardingAnchorFiles,
+  collectRootManifestFiles,
   collectTestHarnessFiles,
+  isImpactNoiseTestPath,
   detectTaskIntent,
   expandTaskTerms,
   extractTaskConcepts,
@@ -19,17 +23,20 @@ import {
   shouldUseAuthCapsuleFilter,
   type TaskIntent,
 } from "./taskIntent.js";
+import { compactContextStatus, isProofMinimalMode, slimSkillProofPack } from "./proofMinimalPack.js";
 import type { ContextMode, ContextPackResult, ContextStatus, ImpactPackResult } from "./types.js";
 
 function shouldBoostAuthFiles(intent: TaskIntent): boolean {
-  return intent === "auth_focus" || intent === "session_edit";
+  return intent === "auth_focus" || intent === "impact_analysis" || intent === "session_edit";
 }
 
-function authArea(path: string): "simple" | "api" | "web" | "other" {
+function authSemanticBucket(path: string): "login_flow" | "session_flow" | "api_auth" | "api_session" | "frontend" | "other" {
   const p = path.toLowerCase();
-  if (p.includes("tests/fixtures/simple-node-app/src/auth/")) return "simple";
-  if (p.includes("tests/fixtures/monorepo-app/packages/api/src/")) return "api";
-  if (p.includes("tests/fixtures/monorepo-app/apps/web/src/")) return "web";
+  if (/\.(tsx|jsx)$/.test(p) && /login|signin|sign-in|auth/i.test(p)) return "frontend";
+  if (/(controller|route|handler|endpoint)/.test(p) && /auth|login|signin|sign-in|access/i.test(p)) return "api_auth";
+  if (/(service|store|repository)/.test(p) && /session|token|jwt/i.test(p)) return "api_session";
+  if (/session|token|jwt|cookie/i.test(p)) return "session_flow";
+  if (/login|signin|sign-in|auth|access/i.test(p)) return "login_flow";
   return "other";
 }
 
@@ -37,13 +44,10 @@ function authPathScore(path: string, text: string): number {
   const p = path.toLowerCase();
   let score = 0;
   if (/\/auth\//.test(p)) score += 35;
-  if (/login|session|auth/.test(p)) score += 30;
-  if (/controller|service|page/.test(p)) score += 12;
-  if (/simple-node-app\/src\/auth\//.test(p)) score += 24;
-  if (/monorepo-app\/packages\/api\/src\//.test(p)) score += 22;
-  if (/monorepo-app\/apps\/web\/src\//.test(p)) score += 20;
-  if (/loginpage\.tsx/.test(p)) score += 20;
-  if (/auth|login|session/.test(text)) score += 8;
+  if (/login|signin|sign-in|session|auth|token|access/i.test(p)) score += 30;
+  if (/controller|service|handler|route|endpoint/i.test(p)) score += 12;
+  if (/\.(tsx|jsx)$/.test(p) && /login|signin|sign-in|auth/i.test(p)) score += 18;
+  if (/auth|login|session|token|signin|authenticate/i.test(text)) score += 8;
   return score;
 }
 
@@ -73,11 +77,25 @@ function collectAuthGraphFiles(
 
   const selected: Array<{ path: string; reason: string; score: number }> = [];
   const seen = new Set<string>();
-  const areaLimits: Record<ReturnType<typeof authArea>, number> = { simple: 2, api: 2, web: 2, other: maxFiles };
-  const areaCounts: Record<ReturnType<typeof authArea>, number> = { simple: 0, api: 0, web: 0, other: 0 };
+  const areaLimits: Record<ReturnType<typeof authSemanticBucket>, number> = {
+    login_flow: 2,
+    session_flow: 2,
+    api_auth: 2,
+    api_session: 2,
+    frontend: 2,
+    other: maxFiles,
+  };
+  const areaCounts: Record<ReturnType<typeof authSemanticBucket>, number> = {
+    login_flow: 0,
+    session_flow: 0,
+    api_auth: 0,
+    api_session: 0,
+    frontend: 0,
+    other: 0,
+  };
 
   for (const candidate of candidates) {
-    const area = authArea(candidate.path);
+    const area = authSemanticBucket(candidate.path);
     if (seen.has(candidate.path) || areaCounts[area] >= areaLimits[area]) continue;
     if (
       !candidate.path.toLowerCase().includes("auth") &&
@@ -114,7 +132,7 @@ export function getContextStatus(root?: string): ContextStatus {
   if (!graph.exists) suggestedCommands.push("npm run graph:build");
   if (!capsules?.length) suggestedCommands.push("npm run context:build");
 
-  return {
+  const status: ContextStatus = {
     graphExists: graph.exists,
     capsulesExist: Boolean(capsules?.length),
     capsuleCount: capsules?.length ?? 0,
@@ -123,6 +141,7 @@ export function getContextStatus(root?: string): ContextStatus {
     graphEdgeCount: graph.edgeCount,
     suggestedCommands,
   };
+  return compactContextStatus(status);
 }
 
 export function buildContextPack(input: {
@@ -132,15 +151,29 @@ export function buildContextPack(input: {
   budgetTokens?: number;
 }): ContextPackResult {
   const mode = input.mode ?? "discovery";
-  const budgetTokens = clampBudgetTokens(input.budgetTokens, 300, 2500, 1000);
+  const cfg = getConfig();
+  const defaultBudget = isProofMinimalMode() ? cfg.contextPackBudgetTokens : 1000;
+  const budgetTokens = clampBudgetTokens(input.budgetTokens, 300, 2500, defaultBudget);
   const files: ContextPackResult["files"] = [];
   const symbols: ContextPackResult["symbols"] = [];
   const seenFiles = new Set<string>();
   const seenSymbols = new Set<string>();
   const intent = detectTaskIntent(input.task, mode);
   const authCapsuleFilter = shouldUseAuthCapsuleFilter(intent);
-  const maxFiles = intent === "auth_focus" ? 8 : intent === "onboarding" ? 10 : 12;
-  const maxSymbols = intent === "auth_focus" ? 10 : 15;
+  const maxFiles = isProofMinimalMode() && intent === "auth_focus"
+    ? cfg.contextPackMaxFiles
+    : intent === "auth_focus"
+      ? 8
+      : intent === "impact_analysis"
+        ? 10
+        : intent === "onboarding"
+          ? 10
+          : 12;
+  const maxSymbols = isProofMinimalMode() && intent === "auth_focus"
+    ? cfg.contextPackMaxSymbols
+    : intent === "auth_focus" || intent === "impact_analysis"
+      ? 10
+      : 15;
   const graphTask = expandTaskTerms(input.task, intent).join(" ");
 
   const capsules = loadCapsules(input.root);
@@ -209,7 +242,20 @@ export function buildContextPack(input: {
     }
   }
 
-  if (intent === "session_edit" || (intent === "onboarding" && /\btests?\b/i.test(input.task))) {
+  if (intent === "impact_analysis") {
+    for (const candidate of collectImpactAnalysisAnchors(input.root)) {
+      if (seenFiles.has(candidate.path)) continue;
+      seenFiles.add(candidate.path);
+      files.push(candidate);
+    }
+    for (const candidate of collectRootManifestFiles(input.task, input.root)) {
+      if (seenFiles.has(candidate.path)) continue;
+      seenFiles.add(candidate.path);
+      files.push(candidate);
+    }
+  }
+
+  if (intent === "impact_analysis" || intent === "session_edit") {
     for (const candidate of collectTestHarnessFiles(input.task, input.root)) {
       if (seenFiles.has(candidate.path)) continue;
       seenFiles.add(candidate.path);
@@ -233,7 +279,10 @@ export function buildContextPack(input: {
   if (cmdResult.likelyLint) commandBlock.lint = cmdResult.likelyLint;
   if (cmdResult.likelyDev) commandBlock.dev = cmdResult.likelyDev;
 
-  const limits = multimodalLimits(intent);
+  const limits =
+    isProofMinimalMode() && intent === "auth_focus"
+      ? { docs: 0, assets: 0, concepts: 0 }
+      : multimodalLimits(intent);
   const multimodal = rankMultimodalForTask(graphTask, input.root);
   const taskConcepts = extractTaskConcepts(input.task);
   const mergedConcepts = [...taskConcepts, ...multimodal.concepts]
@@ -267,9 +316,15 @@ export function buildContextPack(input: {
     summary,
     files: files
       .filter((file) => !isLowValuePackPath(file.path))
+      .filter(
+        (file) =>
+          (intent !== "impact_analysis" && intent !== "session_edit") || !isImpactNoiseTestPath(file.path),
+      )
       .sort((a, b) => b.score - a.score)
       .slice(0, maxFiles),
-    symbols: symbols.slice(0, maxSymbols),
+    symbols: symbols
+      .filter((symbol) => intent !== "impact_analysis" || !symbol.path?.includes("edge-symbols-project"))
+      .slice(0, maxSymbols),
     docs,
     assets,
     concepts,
@@ -280,9 +335,16 @@ export function buildContextPack(input: {
     generatedAt: new Date().toISOString(),
   };
 
-  const capped = capByBudget(pack, budgetTokens);
-  const result = { ...(capped.payload as ContextPackResult), truncated: capped.truncated };
-  result.estimatedOutputTokens = Math.ceil(capped.charCount / 4);
+  let result: ContextPackResult;
+  if (isProofMinimalMode()) {
+    result = slimSkillProofPack(pack, intent, input.task, input.root, pack.files);
+    result.estimatedOutputTokens =
+      result.estimatedOutputTokens ?? Math.ceil(JSON.stringify(result).length / 4);
+  } else {
+    const capped = capByBudget(pack, budgetTokens);
+    result = { ...(capped.payload as ContextPackResult), truncated: capped.truncated };
+    result.estimatedOutputTokens = Math.ceil(capped.charCount / 4);
+  }
   return result;
 }
 
