@@ -1,0 +1,1 @@
+{"nodes": [{"id": "auth_controller_ts", "label": "auth.controller.ts", "file_type": "code", "source_file": "tests/fixtures/monorepo-app/packages/api/src/auth.controller.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}], "edges": [], "hyperedges": []}
