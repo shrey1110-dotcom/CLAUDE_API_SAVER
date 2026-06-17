@@ -119,3 +119,55 @@ See [multi-client-ab-tests.md](multi-client-ab-tests.md) and [ab-test-templates/
 - After major graph/context logic changes
 - Before comparing diagnostic compression numbers in docs
 - Before claiming improvements in docs or marketing
+
+---
+
+## Claude Supplied-Context Benchmark (2026-06-11)
+
+**Scope:** Claude (Cursor IDE, Sonnet 4.5) evaluated both arms using supplied context only. No MCP in either arm. 3 repeats per arm per task.
+
+**Commit:** `652981d` · **Branch:** `clean-main` · **Graphify:** v0.8.36 (Gemini, 1794 nodes/4105 edges/113 communities)
+
+> Exact Claude token usage was **not captured** (running in Cursor IDE without API counter). Token comparison is INCOMPLETE.
+
+### Context size (supplied tokens, estimated)
+
+| Task | Graphify | repo-context | Reduction |
+|---|---:|---:|---:|
+| auth-discovery | ~1,730 | ~101 | 94.2% |
+| impact-analysis | ~1,864 | ~58 | 96.9% |
+| edit-planning | ~2,004 | ~61 | 97.0% |
+| architecture-discovery | ~2,057 | ~87 | 95.8% |
+| onboarding-map | ~2,177 | ~110 | 94.9% |
+| **Median** | **~1,864** | **~87** | **95.3%** |
+
+repo-context supplied **94–97% smaller context** on all 5 tasks.
+
+### Quality (0–10, using existing repo rubrics)
+
+| Task | Graphify | repo-context | Winner |
+|---|---:|---:|---|
+| auth-discovery | 6.0 | **10.0** | repo-context |
+| impact-analysis | **10.0** | 0.0 | graphify |
+| edit-planning | **10.0** | 2.0 | graphify |
+| architecture-discovery | **10.0** | 8.3 | graphify |
+| onboarding-map | 8.0 | **10.0** | repo-context |
+
+**Quality wins: graphify 3/5, repo-context 2/5**
+
+### Key findings
+
+- **repo-context was smaller on all 5 tasks** (context-efficiency wins: 5/5).
+- **Quality was mixed.** repo-context won where it returned exact file paths (auth-discovery, onboarding-map). Graphify won where repo-context returned empty context (impact-analysis, edit-planning) or sparse context (architecture-discovery).
+- **repo-context failure mode:** The `context_pack` with `--budget 500` returned empty results for `impact-analysis` and `edit-planning` task queries. This is a real limitation, not hidden.
+- **Graphify limitation:** `graphify query` is unavailable in v0.8.36; context was built from graph.json keyword extraction and community names. Some community labels were misleading (e.g. "Login Logic" community contained benchmark docs, not login code).
+
+### Allowed claim from this benchmark
+
+> "On a Claude supplied-context benchmark over the public repo, repo-context skill mode produced 94–97% smaller supplied context than Graphify best-effort on all 5 tasks. Quality was mixed: repo-context had higher quality on 2/5 tasks; Graphify on 3/5. Exact Claude token usage was not captured."
+
+### Artifacts
+
+- `.mcp-benchmarks/claude/summary.md` — full report
+- `.mcp-benchmarks/claude/runs/<task>/<arm>/repeat-N/` — individual run answers and quality scores
+- `.mcp-benchmarks/claude/scores.json` — aggregated scores
