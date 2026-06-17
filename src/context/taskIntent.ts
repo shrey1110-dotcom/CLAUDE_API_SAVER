@@ -5,7 +5,27 @@ import { loadGraph } from "../graph/queryGraph.js";
 import { resolveRoot } from "../pathSafety.js";
 import type { ContextMode } from "./types.js";
 
-export type TaskIntent = "auth_focus" | "impact_analysis" | "session_edit" | "onboarding" | "general";
+export type TaskIntent =
+  | "auth_focus"
+  | "impact_analysis"
+  | "session_edit"
+  | "edit_planning"
+  | "architecture"
+  | "onboarding"
+  | "general";
+
+/** Generic English stopwords + prompt boilerplate that must never drive graph matching. */
+const TERM_STOPWORDS = new Set([
+  "the", "a", "an", "and", "or", "of", "in", "on", "to", "by", "for", "with", "is", "are",
+  "do", "not", "this", "that", "it", "its", "be", "as", "at", "from", "into", "give", "exact",
+  "files", "file", "why", "each", "matters", "matter", "most", "likely", "find", "where",
+  "what", "how", "explain", "create", "plan", "short", "while", "when", "which", "without",
+  "edit", "edits", "repo", "repository", "understand", "should", "would", "must",
+]);
+
+export function significantTerms(terms: string[]): string[] {
+  return terms.filter((term) => term.length >= 3 && !TERM_STOPWORDS.has(term));
+}
 
 export const AUTH_TERMS = ["auth", "authentication", "login", "session"];
 export const AUTH_EXPANSIONS = [
@@ -40,6 +60,23 @@ const IMPACT_ANALYSIS_EXPANSIONS = [
   "api",
   "frontend",
   "risk",
+];
+
+const EDIT_PLANNING_EXPANSIONS = [
+  "tests",
+  "risk",
+  "smallest safe change",
+  "validate",
+  "test commands",
+];
+
+const ARCHITECTURE_EXPANSIONS = [
+  "architecture",
+  "modules",
+  "entrypoint",
+  "build",
+  "pipeline",
+  "system",
 ];
 
 const ONBOARDING_EXPANSIONS = [
@@ -128,9 +165,15 @@ export function detectTaskIntent(task: string, mode?: ContextMode): TaskIntent {
   }
   if (
     mode === "impact" ||
-    /\bimpact\b|\baffected\b|likely affected|related tests?|session validation behavior changes/.test(lower)
+    /\bimpact(?:ed|ing|s)?\b|\baffected\b|likely affected|related tests?|session validation behavior changes/.test(lower)
   ) {
     return "impact_analysis";
+  }
+  if (/\bplan\b[^.]*\bedit\b|\bsafe (?:edit|change)\b|\bpreserv\w* tests?\b|\bedit plan\b/.test(lower)) {
+    return "edit_planning";
+  }
+  if (/\barchitecture\b|\bhow (?:modules|they|files) relate\b|\bsystem design\b|\bmodule map\b/.test(lower)) {
+    return "architecture";
   }
   const terms = normalizeTerms(task);
   if (terms.some((term) => AUTH_TERMS.includes(term))) {
@@ -149,10 +192,18 @@ export function expandTaskTerms(task: string, intent: TaskIntent): string[] {
         ? IMPACT_ANALYSIS_EXPANSIONS
       : intent === "session_edit"
         ? SESSION_EDIT_EXPANSIONS
-        : intent === "onboarding"
-          ? ONBOARDING_EXPANSIONS
-          : [];
-  return [...new Set([...base, ...phrases.flatMap((p) => normalizeTerms(p)), ...extra.flatMap((p) => normalizeTerms(p)), ...phrases])];
+        : intent === "edit_planning"
+          ? EDIT_PLANNING_EXPANSIONS
+          : intent === "architecture"
+            ? ARCHITECTURE_EXPANSIONS
+            : intent === "onboarding"
+              ? ONBOARDING_EXPANSIONS
+              : [];
+  const merged = [
+    ...new Set([...base, ...phrases.flatMap((p) => normalizeTerms(p)), ...extra.flatMap((p) => normalizeTerms(p)), ...phrases]),
+  ];
+  const filtered = significantTerms(merged);
+  return filtered.length > 0 ? filtered : merged;
 }
 
 export function extractTaskPhrases(task: string): string[] {
@@ -238,6 +289,201 @@ export function collectTestHarnessFiles(
   return selected.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, 6);
 }
 
+function splitPathSubtokens(filePath: string): Set<string> {
+  const tokens = new Set<string>();
+  for (const segment of filePath.toLowerCase().split(/[/\\]/)) {
+    for (const part of segment.split(/[^a-z0-9]+/)) {
+      if (part) tokens.add(part);
+    }
+  }
+  // camelCase splits on the original path
+  for (const piece of filePath.split(/[/\\.]/)) {
+    for (const sub of piece.split(/(?=[A-Z])/)) {
+      const lower = sub.toLowerCase();
+      if (lower.length >= 3) tokens.add(lower);
+    }
+  }
+  return tokens;
+}
+
+/**
+ * Generic retrieval: rank graph file nodes by how many distinct significant task
+ * terms appear in their path subtokens (camelCase/snake_case aware) or summary.
+ * No hardcoded file paths; works for any repo with a built graph.
+ */
+export function collectPathTermAnchors(
+  task: string,
+  root?: string,
+  maxFiles = 8,
+): Array<{ path: string; reason: string; score: number }> {
+  const graph = loadGraph(root);
+  if (!graph) return [];
+
+  // Use only the user's actual task terms (no intent expansions) so anchors
+  // stay specific to what was asked.
+  // Canonicalize inflections so "test"/"tests" count as one distinct hit.
+  const canon = (term: string): string => term.replace(/s$/, "");
+  const terms = [...new Set(significantTerms(normalizeTerms(task)).map(canon))];
+  if (terms.length === 0) return [];
+
+  const scored: Array<{ path: string; reason: string; score: number }> = [];
+  for (const node of graph.nodes) {
+    if (node.type !== "file" || typeof node.path !== "string") continue;
+    if (isLowValuePackPath(node.path)) continue;
+    const subtokens = new Set([...splitPathSubtokens(node.path)].map(canon));
+    const summary = (node.summary ?? "").toLowerCase();
+    const pathHits = new Set<string>();
+    let summaryHits = 0;
+    for (const term of terms) {
+      if (subtokens.has(term)) pathHits.add(term);
+      else if (summary.includes(term)) summaryHits += 1;
+    }
+    if (pathHits.size === 0 && summaryHits < 2) continue;
+    // Multiple distinct path-term hits indicate a strong, specific match
+    // (e.g. "context" + "pack" both hitting src/context/packContext.ts).
+    let score = pathHits.size * 30 + Math.min(summaryHits * 4, 12);
+    if (node.path.startsWith("src/")) score += 10;
+    if (pathHits.size >= 2) score += 25;
+    if (score < 30) continue;
+    scored.push({
+      path: node.path,
+      reason: `path-term match: ${[...pathHits].join("+") || "summary"}`,
+      score,
+    });
+  }
+  // Cap files per directory so a single module cannot flood the anchor list.
+  const ranked = scored.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
+  const perDir = new Map<string, number>();
+  const selected: Array<{ path: string; reason: string; score: number }> = [];
+  for (const entry of ranked) {
+    const dir = entry.path.split("/").slice(0, 2).join("/");
+    const count = perDir.get(dir) ?? 0;
+    if (count >= 4) continue;
+    perDir.set(dir, count + 1);
+    selected.push(entry);
+    if (selected.length >= maxFiles) break;
+  }
+  return selected;
+}
+
+/**
+ * Generic structural expansion: files directly connected (imports/calls/tests)
+ * to the given seed files in the repo graph. Dependencies are the natural
+ * impact/edit surface; no task-specific logic.
+ */
+export function collectGraphNeighborFiles(
+  seedPaths: string[],
+  root?: string,
+  maxFiles = 4,
+): Array<{ path: string; reason: string; score: number }> {
+  const graph = loadGraph(root);
+  if (!graph || seedPaths.length === 0) return [];
+
+  const seeds = new Set(seedPaths);
+  const nodeToFile = new Map<string, string>();
+  for (const node of graph.nodes) {
+    if (node.type === "file" && typeof node.path === "string") {
+      nodeToFile.set(node.id, node.path);
+    }
+  }
+
+  const neighborScores = new Map<string, { score: number; via: string }>();
+  for (const edge of graph.edges) {
+    if (!["imports", "calls", "tests", "references"].includes(edge.type)) continue;
+    const fromFile = nodeToFile.get(edge.from);
+    const toFile = nodeToFile.get(edge.to);
+    if (!fromFile || !toFile || fromFile === toFile) continue;
+    const seedSide = seeds.has(fromFile) ? fromFile : seeds.has(toFile) ? toFile : null;
+    const otherSide = seedSide === fromFile ? toFile : fromFile;
+    if (!seedSide || seeds.has(otherSide)) continue;
+    if (isLowValuePackPath(otherSide)) continue;
+    const weight = edge.type === "imports" ? 3 : edge.type === "calls" ? 2 : 1;
+    const current = neighborScores.get(otherSide);
+    if (!current || current.score < weight) {
+      neighborScores.set(otherSide, { score: (current?.score ?? 0) + weight, via: seedSide });
+    } else {
+      current.score += weight;
+    }
+  }
+
+  return [...neighborScores.entries()]
+    .map(([path, info]) => ({
+      path,
+      reason: `graph-neighbor of ${info.via}`,
+      score: 60 + Math.min(info.score * 4, 20),
+    }))
+    .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
+    .slice(0, maxFiles);
+}
+
+const IMPORT_LINE_RE = /^\s*(?:import|export)[^"']*from\s+["']([^"']+)["']/gm;
+
+/**
+ * Parse the import statements of a source file and resolve relative targets
+ * to repo-relative paths. Generic structural analysis, no task logic.
+ */
+export function parseLocalImports(relPath: string, root?: string): string[] {
+  const resolved = resolveRoot(root);
+  const abs = path.join(resolved, relPath);
+  let text: string;
+  try {
+    text = fs.readFileSync(abs, "utf8");
+  } catch {
+    return [];
+  }
+  const dir = path.dirname(relPath);
+  const targets: string[] = [];
+  for (const match of text.matchAll(IMPORT_LINE_RE)) {
+    const spec = match[1];
+    if (!spec.startsWith(".")) continue;
+    const base = path.normalize(path.join(dir, spec)).replace(/\\/g, "/");
+    const candidates = [
+      base,
+      base.replace(/\.js$/, ".ts"),
+      base.replace(/\.js$/, ".tsx"),
+      `${base}.ts`,
+      `${base}/index.ts`,
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(path.join(resolved, candidate))) {
+        targets.push(candidate);
+        break;
+      }
+    }
+  }
+  return [...new Set(targets)];
+}
+
+/**
+ * Files imported by the seed files — the natural edit/impact surface.
+ * Derived from real import statements; no hardcoded paths.
+ */
+export function collectImportNeighborFiles(
+  seedPaths: string[],
+  root?: string,
+  maxFiles = 4,
+): Array<{ path: string; reason: string; score: number }> {
+  const seeds = new Set(seedPaths);
+  const counts = new Map<string, { count: number; via: string }>();
+  for (const seed of seedPaths) {
+    if (!/\.(ts|tsx|js|mjs)$/.test(seed)) continue;
+    for (const target of parseLocalImports(seed, root)) {
+      if (seeds.has(target) || isLowValuePackPath(target)) continue;
+      const current = counts.get(target);
+      if (current) current.count += 1;
+      else counts.set(target, { count: 1, via: seed.split("/").pop() ?? seed });
+    }
+  }
+  return [...counts.entries()]
+    .map(([p, info]) => ({
+      path: p,
+      reason: `imported by ${info.via}`,
+      score: 88 + Math.min(info.count * 2, 8),
+    }))
+    .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
+    .slice(0, maxFiles);
+}
+
 export function collectImpactAnalysisAnchors(
   root?: string,
 ): Array<{ path: string; reason: string; score: number }> {
@@ -286,6 +532,8 @@ export function multimodalLimits(intent: TaskIntent): { docs: number; assets: nu
   if (intent === "onboarding") return { docs: 2, assets: 1, concepts: 4 };
   if (intent === "session_edit") return { docs: 1, assets: 0, concepts: 4 };
   if (intent === "impact_analysis") return { docs: 0, assets: 0, concepts: 4 };
+  if (intent === "edit_planning") return { docs: 0, assets: 0, concepts: 4 };
+  if (intent === "architecture") return { docs: 2, assets: 0, concepts: 5 };
   if (intent === "auth_focus") return { docs: 3, assets: 2, concepts: 4 };
   return { docs: 5, assets: 4, concepts: 5 };
 }

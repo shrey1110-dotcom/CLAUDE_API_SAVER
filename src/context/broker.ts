@@ -10,7 +10,10 @@ import { rankMultimodalForTask } from "./multimodalRank.js";
 import {
   AUTH_EXPANSIONS,
   collectImpactAnalysisAnchors,
+  collectGraphNeighborFiles,
+  collectImportNeighborFiles,
   collectOnboardingAnchorFiles,
+  collectPathTermAnchors,
   collectRootManifestFiles,
   collectTestHarnessFiles,
   isImpactNoiseTestPath,
@@ -26,8 +29,11 @@ import {
 import { compactContextStatus, isProofMinimalMode, slimSkillProofPack } from "./proofMinimalPack.js";
 import type { ContextMode, ContextPackResult, ContextStatus, ImpactPackResult } from "./types.js";
 
-function shouldBoostAuthFiles(intent: TaskIntent): boolean {
-  return intent === "auth_focus" || intent === "impact_analysis" || intent === "session_edit";
+function shouldBoostAuthFiles(intent: TaskIntent, task?: string): boolean {
+  if (intent === "auth_focus" || intent === "session_edit") return true;
+  if (intent !== "impact_analysis") return false;
+  // Only boost auth files for impact tasks that are actually about auth/session.
+  return task ? /auth|login|session|token/i.test(task) : true;
 }
 
 function authSemanticBucket(path: string): "login_flow" | "session_flow" | "api_auth" | "api_session" | "frontend" | "other" {
@@ -123,6 +129,24 @@ function collectAuthGraphFiles(
   return selected;
 }
 
+function pushOrUpgradeFile(
+  files: ContextPackResult["files"],
+  seenFiles: Set<string>,
+  candidate: { path: string; reason: string; score: number },
+): void {
+  const existing = files.find((file) => file.path === candidate.path);
+  if (existing) {
+    // Upgrade a weaker earlier match so anchors survive the score-based cut.
+    if (existing.score < candidate.score) {
+      existing.score = candidate.score;
+      existing.reason = candidate.reason;
+    }
+    return;
+  }
+  seenFiles.add(candidate.path);
+  files.push(candidate);
+}
+
 export function getContextStatus(root?: string): ContextStatus {
   const graph = getGraphStatus(root);
   const manifest = loadContextManifest(root);
@@ -166,9 +190,13 @@ export function buildContextPack(input: {
       ? 8
       : intent === "impact_analysis"
         ? 10
-        : intent === "onboarding"
-          ? 10
-          : 12;
+        : intent === "edit_planning"
+          ? 12
+          : intent === "onboarding"
+            ? 10
+            : intent === "architecture"
+              ? 12
+              : 12;
   const maxSymbols = isProofMinimalMode() && intent === "auth_focus"
     ? cfg.contextPackMaxSymbols
     : intent === "auth_focus" || intent === "impact_analysis"
@@ -197,7 +225,7 @@ export function buildContextPack(input: {
 
   const graphQuery = queryGraph(graphTask, {
     root: input.root,
-    maxResults: shouldBoostAuthFiles(intent) ? 16 : intent === "onboarding" ? 10 : 8,
+    maxResults: shouldBoostAuthFiles(intent, input.task) ? 16 : intent === "onboarding" ? 10 : 8,
     budgetTokens: Math.floor(budgetTokens / 2),
   });
 
@@ -221,7 +249,7 @@ export function buildContextPack(input: {
     }
   }
 
-  if (shouldBoostAuthFiles(intent)) {
+  if (shouldBoostAuthFiles(intent, input.task)) {
     for (const candidate of collectAuthGraphFiles(input.task, input.root, maxFiles, intent)) {
       if (seenFiles.has(candidate.path) || isLowValuePackPath(candidate.path)) continue;
       seenFiles.add(candidate.path);
@@ -231,9 +259,7 @@ export function buildContextPack(input: {
 
   if (intent === "onboarding") {
     for (const candidate of collectOnboardingAnchorFiles(input.root)) {
-      if (seenFiles.has(candidate.path)) continue;
-      seenFiles.add(candidate.path);
-      files.push(candidate);
+      pushOrUpgradeFile(files, seenFiles, candidate);
     }
     for (const authCandidate of collectAuthGraphFiles(input.task, input.root, 4, "auth_focus")) {
       if (seenFiles.has(authCandidate.path) || isLowValuePackPath(authCandidate.path)) continue;
@@ -244,22 +270,50 @@ export function buildContextPack(input: {
 
   if (intent === "impact_analysis") {
     for (const candidate of collectImpactAnalysisAnchors(input.root)) {
-      if (seenFiles.has(candidate.path)) continue;
-      seenFiles.add(candidate.path);
-      files.push(candidate);
+      pushOrUpgradeFile(files, seenFiles, candidate);
     }
     for (const candidate of collectRootManifestFiles(input.task, input.root)) {
+      pushOrUpgradeFile(files, seenFiles, candidate);
+    }
+  }
+
+  if (intent === "impact_analysis" || intent === "session_edit" || intent === "edit_planning") {
+    for (const candidate of collectTestHarnessFiles(input.task, input.root)) {
       if (seenFiles.has(candidate.path)) continue;
       seenFiles.add(candidate.path);
       files.push(candidate);
     }
   }
 
-  if (intent === "impact_analysis" || intent === "session_edit") {
-    for (const candidate of collectTestHarnessFiles(input.task, input.root)) {
-      if (seenFiles.has(candidate.path)) continue;
+  if (
+    intent === "impact_analysis" ||
+    intent === "edit_planning" ||
+    intent === "architecture" ||
+    intent === "general"
+  ) {
+    const termAnchors = collectPathTermAnchors(input.task, input.root, maxFiles);
+    for (const candidate of termAnchors) {
+      if (seenFiles.has(candidate.path) || isLowValuePackPath(candidate.path)) continue;
       seenFiles.add(candidate.path);
       files.push(candidate);
+    }
+    const implementationSeeds = termAnchors
+      .filter((candidate) => candidate.path.startsWith("src/"))
+      .map((candidate) => candidate.path)
+      .slice(0, 4);
+    for (const candidate of collectImportNeighborFiles(implementationSeeds, input.root, 4)) {
+      pushOrUpgradeFile(files, seenFiles, candidate);
+    }
+    for (const candidate of collectGraphNeighborFiles(implementationSeeds, input.root, 4)) {
+      if (seenFiles.has(candidate.path) || isLowValuePackPath(candidate.path)) continue;
+      seenFiles.add(candidate.path);
+      files.push(candidate);
+    }
+  }
+
+  if (intent === "architecture") {
+    for (const candidate of collectOnboardingAnchorFiles(input.root)) {
+      pushOrUpgradeFile(files, seenFiles, { ...candidate, reason: "architecture-anchor" });
     }
   }
 

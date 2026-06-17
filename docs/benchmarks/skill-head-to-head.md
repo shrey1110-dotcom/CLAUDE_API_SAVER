@@ -75,3 +75,30 @@ Otherwise:
 - MCP locked-mode totals are not comparable to this skill-mode benchmark.
 - Diagnostic compression ratios are not proof of real client savings.
 - Do not claim Graphify superiority unless this harness verdict allows it.
+
+## Claude variant (supplied-context, Claude profile)
+
+A Claude-specific variant exists alongside the Codex harness. It is a separate
+metric and never comparable to the Codex numbers above.
+
+- Commands:
+  - `npm run benchmark:claude-pack-quality` — local pre-Claude gate: generates
+    `repo-context pack --profile claude` packs for the 5 benchmark tasks, scores
+    them with the shared rubrics (`src/benchmark/claudeTaskRubrics.ts`), and
+    compares against the Graphify-derived contexts. Gates: quality ≥
+    Graphify-derived on ≥4/5 tasks and ≥70% smaller context on every task.
+  - `npm run benchmark:claude-skill-head-to-head` — writes prompts/contexts for
+    3 repeats × 2 arms × 5 tasks, imports Claude answers from the run folders,
+    and scores them.
+  - `npm run self:prove-claude-skill-head-to-head` — iteration loop; writes
+    `.mcp-benchmarks/claude/iterations/iteration-N/summary.{md,json}` and stops
+    on SUCCESS (≥4/5 quality, ≥70% reduction) or STRETCH (5/5 quality).
+- Arms: "Graphify-derived context" (graph.json keyword extraction +
+  GRAPH_REPORT.md; `graphify query` unavailable/hanging in Graphify 0.8.36) vs
+  `repo-context pack --profile claude` (budget 900).
+- Fairness: `npm run benchmark:audit` includes `scripts/claude-fairness-audit.mjs`
+  (no rubric paths in profile generation code, no rubric imports in generation
+  code, no cross-arm contamination, identical prompt templates).
+- Exact Claude token usage is not captured in Cursor; the Claude variant makes
+  no token-savings claims. Latest result (2026-06-11, iteration 2): 70%+ smaller
+  context on 5/5 tasks, equal-or-better quality on 5/5 tasks.

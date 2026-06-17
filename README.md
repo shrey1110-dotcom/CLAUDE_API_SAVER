@@ -30,6 +30,8 @@ Skill-mode head-to-head (auth-discovery, no MCP, supplied context): `SCOPED_SKIL
 
 Best-effort skill benchmark (auth-discovery): repo-context ultra pack is ~89% smaller context than Graphify best-effort with 5/5 vs 1/5 files locally; Codex median reduction ~7.6% (fixed client overhead — see `npm run benchmark:token-floor`). Context-efficiency metrics: `npm run benchmark:context-efficiency`.
 
+Claude supplied-context benchmark (2026-06-11, separate metric from Codex): the `--profile claude` pack produced 70%+ smaller supplied context than Graphify-derived context on 5/5 tasks with equal-or-better quality on 5/5 tasks (`graphify query` unavailable in 0.8.36; exact Claude token usage not captured, so no Claude token-savings claim). See `docs/benchmarks.md`.
+
 Not yet proven:
 
 - MCP-mode token superiority vs Graphify (different usage modes; not apples-to-apples).
@@ -74,6 +76,7 @@ npm run build
 repo-context index .
 repo-context status
 repo-context pack "Where is auth implemented?" --budget 500 --format markdown
+repo-context pack "Plan a safe refactor" --profile claude   # richer Claude-optimized pack (budget 900)
 repo-context install cursor
 repo-context install codex
 npm run doctor

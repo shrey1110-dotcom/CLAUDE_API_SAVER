@@ -322,7 +322,11 @@ function slimGeneralSkillProofPack(
         ? Math.max(config.contextPackMaxFiles, 8)
         : intent === "session_edit"
           ? Math.max(config.contextPackMaxFiles, 7)
-          : config.contextPackMaxFiles;
+          : intent === "edit_planning"
+            ? Math.max(config.contextPackMaxFiles, 8)
+            : intent === "architecture"
+              ? Math.max(config.contextPackMaxFiles, 10)
+              : config.contextPackMaxFiles;
   let pool = (filePool ?? pack.files).filter(
     (file) => !PROOF_NOISE_PATH_RE.test(file.path) && !isImpactNoiseTestPath(file.path),
   );

@@ -168,6 +168,66 @@ repo-context supplied **94–97% smaller context** on all 5 tasks.
 
 ### Artifacts
 
-- `.mcp-benchmarks/claude/summary.md` — full report
+- `.mcp-benchmarks/claude/iterations/iteration-1/` — preserved baseline run (this section)
 - `.mcp-benchmarks/claude/runs/<task>/<arm>/repeat-N/` — individual run answers and quality scores
-- `.mcp-benchmarks/claude/scores.json` — aggregated scores
+
+---
+
+## Claude Supplied-Context Benchmark — Iteration 2, Claude profile (2026-06-11)
+
+**Scope:** Same repo, same 5 tasks, same prompt template, same Graphify-derived contexts as iteration 1. The repo-context arm switched from the ultra skill pack (budget 500) to the new **Claude profile** (`repo-context pack "<task>" --profile claude`, budget 900). 3 repeats per arm per task; no MCP in either arm.
+
+**Arm labels:** The Graphify arm is **"Graphify-derived context"** (graph.json keyword extraction + GRAPH_REPORT.md excerpts) because `graphify query` is unavailable/hanging in Graphify 0.8.36. It is not "graphify query best-effort".
+
+> Exact Claude token usage was **not captured** (Cursor IDE, no API counter). Token comparison remains INCOMPLETE. No Claude token-savings claims are made.
+
+### What changed (product fixes only; rubrics, prompts, and the Graphify arm unchanged)
+
+1. Intent detection handles inflections ("impacted"), edit-planning phrasing, and architecture phrasing (previously these fell to a generic path that returned empty packs).
+2. Stopword filtering in term expansion (a stopword like "do" could previously outrank real path matches).
+3. Generic path-term anchor retrieval (camelCase/snake_case subtoken matching against graph file paths — no hardcoded paths).
+4. Import-statement neighbor expansion (files imported by top matches join the pack).
+5. Claude-profile markdown: file roles, import-derived relationship notes, module map, tests, validation commands, risk notes.
+
+### Context size (same estimator both arms)
+
+| Task | Graphify-derived | repo-context (claude profile) | Reduction |
+|---|---:|---:|---:|
+| auth-discovery | ~1,731 | ~210 | 87.9% |
+| impact-analysis | ~1,865 | ~315 | 83.1% |
+| edit-planning | ~2,005 | ~316 | 84.2% |
+| architecture-discovery | ~2,058 | ~427 | 79.3% |
+| onboarding-map | ~2,178 | ~419 | 80.8% |
+
+Context-efficiency wins: **5/5** (all ≥ 79% smaller; gate was ≥ 70%).
+
+### Quality (median of 3 repeats, same rubrics as iteration 1)
+
+| Task | Graphify-derived | repo-context (claude profile) | Winner |
+|---|---:|---:|---|
+| auth-discovery | 8.0 | **10.0** | repo-context |
+| impact-analysis | 10.0 | 10.0 | tie |
+| edit-planning | 10.0 | 10.0 | tie |
+| architecture-discovery | 10.0 | 10.0 | tie |
+| onboarding-map | 6.0 | **10.0** | repo-context |
+
+Quality: repo-context **equal or better on 5/5 tasks** (2 outright wins, 3 ties).
+
+### Validation
+
+- `npm run benchmark:claude-pack-quality` — local pre-Claude gate: PASS
+- `npm run benchmark:audit` — incl. Claude-profile fairness/leakage audit: PASS
+- `npm run self:prove-claude-skill-head-to-head` — verdict: STRETCH (iteration 2)
+- Failed iteration 1 preserved at `.mcp-benchmarks/claude/iterations/iteration-1/`
+
+### Allowed claim from this benchmark
+
+> "On the Claude supplied-context benchmark over the public repo, repo-context's Claude profile produced 70%+ smaller supplied context than Graphify-derived context on 5/5 tasks, with equal or better quality on 5/5 tasks. Exact Claude token usage was not available from Cursor."
+
+**Not allowed:** Claude token-savings claims; "beats Graphify overall"/universal superiority (single repo, 5 tasks, and Graphify's query mode could not be exercised); comparing these Claude scores to Codex scores as the same metric.
+
+### Artifacts
+
+- `.mcp-benchmarks/claude/summary.md` / `summary.json` — full iteration-2 report
+- `.mcp-benchmarks/claude/quality-improvement/` — diagnosis, local gate, fairness audit
+- `.mcp-benchmarks/claude/iterations/iteration-{1,2}/` — full iteration history

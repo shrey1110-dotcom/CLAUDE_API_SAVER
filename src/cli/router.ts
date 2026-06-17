@@ -5,8 +5,9 @@ import { fileURLToPath } from "node:url";
 import { parseCliArgs, readNumberArg, readStringArg } from "../ab/cli.js";
 import { getContextStatus } from "../context/broker.js";
 import { logContextQuery } from "../queries/logger.js";
-import { buildSkillPack, estimateTokensFromText } from "./skillPack.js";
+import { buildClaudeSkillPack, buildSkillPack, CLAUDE_PACK_DEFAULT_BUDGET, estimateTokensFromText } from "./skillPack.js";
 import { formatSkillMarkdown } from "./formatSkillMarkdown.js";
+import { formatClaudeMarkdown } from "./formatClaudeMarkdown.js";
 import { installAssistant } from "./install.js";
 import type { ContextMode } from "../context/types.js";
 
@@ -84,12 +85,16 @@ function commandPack(argv: string[]): number {
   }
   const flags = parseCliArgs(argv.slice(2));
   const root = readStringArg(flags, "root") ?? process.cwd();
-  const budget = readNumberArg(flags, "budget") ?? 500;
+  const profile = (readStringArg(flags, "profile") ?? "").toLowerCase();
+  const isClaudeProfile = profile === "claude";
+  const budget = readNumberArg(flags, "budget") ?? (isClaudeProfile ? CLAUDE_PACK_DEFAULT_BUDGET : 500);
   const format = (readStringArg(flags, "format") ?? "markdown").toLowerCase();
   const out = readStringArg(flags, "out");
   const mode = asMode(readStringArg(flags, "mode"));
 
-  const pack = buildSkillPack({ task, root, mode, budgetTokens: budget });
+  const pack = isClaudeProfile
+    ? buildClaudeSkillPack({ task, root, mode, budgetTokens: budget })
+    : buildSkillPack({ task, root, mode, budgetTokens: budget });
   logContextQuery(
     {
       task,
@@ -110,7 +115,11 @@ function commandPack(argv: string[]): number {
   const markdownProfile =
     format === "minimal" ? "minimal" : format === "ultra" ? "ultra" : "standard";
   const output =
-    format === "json" ? `${JSON.stringify(pack, null, 2)}\n` : formatSkillMarkdown(pack, markdownProfile);
+    format === "json"
+      ? `${JSON.stringify(pack, null, 2)}\n`
+      : isClaudeProfile
+        ? formatClaudeMarkdown(pack, { root })
+        : formatSkillMarkdown(pack, markdownProfile);
 
   if (out) {
     const outPath = path.resolve(out);
@@ -158,6 +167,7 @@ Usage:
 
 Pack options:
   --budget 500 --format markdown|json --out path --root path
+  --profile claude   Richer Claude-optimized pack (default budget 900)
 
 Default workflow is CLI/skill mode. MCP is optional.`);
   return 0;

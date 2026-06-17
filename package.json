@@ -61,7 +61,7 @@
     "benchmark:graphify-best-effort:build": "node scripts/build-graphify-best-effort-context.mjs && node dist/benchmark/graphifyBestEffort.js",
     "benchmark:pack-optimization": "node dist/benchmark/packOptimization.js",
     "benchmark:repo-context-best-effort:build": "node scripts/regenerate-repo-context-best-effort.mjs",
-    "benchmark:audit": "node scripts/benchmark-audit.mjs",
+    "benchmark:audit": "node scripts/benchmark-audit.mjs && node scripts/claude-fairness-audit.mjs",
     "benchmark:context-efficiency": "node dist/benchmark/contextEfficiency.js",
     "benchmark:end-to-end-ai-cost": "node dist/benchmark/endToEndAiCost.js",
     "benchmark:token-floor": "node dist/benchmark/tokenFloor.js",
@@ -96,7 +96,10 @@
     "ab:file-context:record": "node dist/ab/fileContext/recordResult.js",
     "ab:file-context:report": "node dist/ab/fileContext/reportCli.js",
     "ab:file-context:compare": "node dist/ab/fileContext/compareCli.js",
-    "test:ab": "npm run build && vitest run tests/ab.test.ts tests/fileContextAb.test.ts tests/codexAdapter.test.ts tests/authDiscoveryQuality.test.ts tests/codexCliSupport.test.ts tests/failedCodexAnalyze.test.ts tests/toolLoopPolicy.test.ts tests/codexQa.test.ts tests/claudeUsage.test.ts tests/claudeAdapter.test.ts tests/claudeCliSupport.test.ts tests/claudeProofReport.test.ts"
+    "test:ab": "npm run build && vitest run tests/ab.test.ts tests/fileContextAb.test.ts tests/codexAdapter.test.ts tests/authDiscoveryQuality.test.ts tests/codexCliSupport.test.ts tests/failedCodexAnalyze.test.ts tests/toolLoopPolicy.test.ts tests/codexQa.test.ts tests/claudeUsage.test.ts tests/claudeAdapter.test.ts tests/claudeCliSupport.test.ts tests/claudeProofReport.test.ts",
+    "benchmark:claude-pack-quality": "node dist/benchmark/claudePackQuality.js",
+    "benchmark:claude-skill-head-to-head": "node dist/benchmark/claudeSkillHeadToHead.js",
+    "self:prove-claude-skill-head-to-head": "node dist/selfIterate/proveClaudeSkillHeadToHead.js"
   },
   "engines": {
     "node": ">=18"
