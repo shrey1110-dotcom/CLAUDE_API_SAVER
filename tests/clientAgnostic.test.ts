@@ -28,11 +28,13 @@ describe("client-agnostic packaging", () => {
     expect(source).not.toContain(".cursor/mcp.json");
   });
 
-  it("README describes skill-first context broker positioning", () => {
+  it("README describes ScopeKit skill-first positioning", () => {
     const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
-    expect(readme).toMatch(/coding-agent context skill/i);
+    expect(readme).toMatch(/ScopeKit/i);
+    expect(readme).toMatch(/task-complete context packs/i);
     expect(readme).toMatch(/CLI\/skill workflow by default/i);
     expect(readme).toMatch(/Cursor|Codex|Claude/i);
+    expect(readme).toMatch(/npm install -g scopekit/i);
     expect(readme).not.toMatch(/Graphify-inspired/i);
   });
 

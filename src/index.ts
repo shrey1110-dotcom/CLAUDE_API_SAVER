@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { isCliInvocation, runCli } from "./cli/router.js";
+import { invokedBinary } from "./cli/branding.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -22,7 +23,7 @@ import { repoMap } from "./tools/repoMap.js";
 import { searchCodeTool } from "./tools/searchCode.js";
 
 const server = new McpServer({
-  name: "repo-context-mcp",
+  name: "scopekit",
   version: "0.1.0",
 });
 
@@ -212,24 +213,37 @@ if (expose("repo_map")) server.tool(
   async ({ root }) => handleTool("repo_map", { root }, () => repoMap(root)),
 );
 
-async function startMcpServer() {
+async function startMcpServer(binary: ReturnType<typeof invokedBinary>) {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[repo-context-mcp] ready on stdio v0.1.0");
+  const label = binary === "repo-context-mcp" ? "repo-context-mcp (ScopeKit)" : "scopekit";
+  console.error(`[${label}] ready on stdio v0.1.0`);
 }
 
 async function main() {
-  if (isCliInvocation()) {
-    const command = process.argv[2];
-    if (command !== "mcp") {
-      const code = await runCli();
-      process.exit(code);
-    }
+  const binary = invokedBinary();
+  const command = process.argv[2];
+
+  if (command === "mcp") {
+    await startMcpServer(binary);
+    return;
   }
-  await startMcpServer();
+
+  if (isCliInvocation()) {
+    const code = await runCli();
+    process.exit(code);
+  }
+
+  if (binary === "repo-context-mcp") {
+    await startMcpServer(binary);
+    return;
+  }
+
+  const code = await runCli();
+  process.exit(code);
 }
 
 main().catch((error) => {
-  console.error("[repo-context-mcp] failed to start:", error);
+  console.error("[scopekit] failed to start:", error);
   process.exit(1);
 });

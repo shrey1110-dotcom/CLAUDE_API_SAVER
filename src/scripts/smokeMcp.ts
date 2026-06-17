@@ -11,7 +11,7 @@ if (!fs.existsSync(entry)) {
   process.exit(1);
 }
 
-const child = spawn(process.execPath, [entry], {
+const child = spawn(process.execPath, [entry, "mcp"], {
   cwd: ROOT,
   stdio: ["pipe", "pipe", "pipe"],
   env: { ...process.env, MCP_OUTPUT_MODE: "compact" },

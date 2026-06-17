@@ -30,7 +30,8 @@ afterEach(() => {
 describe("skill CLI", () => {
   it("detects CLI invocation commands", () => {
     expect(isCliInvocation(["node", "dist/index.js", "pack"])).toBe(true);
-    expect(isCliInvocation(["node", "dist/index.js"])).toBe(false);
+    expect(isCliInvocation(["node", "dist/index.js"])).toBe(true);
+    expect(isCliInvocation(["node", "dist/index.js", "setup"])).toBe(true);
     expect(isCliInvocation(["node", "dist/index.js", "mcp"])).toBe(true);
   });
 
@@ -68,15 +69,17 @@ describe("skill CLI", () => {
   });
 
   it("install cursor and codex safely with marked sections", () => {
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "repo-context-install-"));
-    const cursorPath = installAssistant("cursor", tmp);
-    const codexPath = installAssistant("codex", tmp);
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "scopekit-install-"));
+    const cursorResults = installAssistant("cursor", { root: tmp, dryRun: false });
+    const codexResults = installAssistant("codex", { root: tmp, dryRun: false });
+    const cursorPath = cursorResults[0]!.path;
+    const codexPath = codexResults[0]!.path;
     expect(fs.existsSync(cursorPath)).toBe(true);
-    expect(fs.readFileSync(cursorPath, "utf8")).toContain("repo-context:begin");
+    expect(fs.readFileSync(cursorPath, "utf8")).toContain("scopekit:begin");
     expect(fs.existsSync(codexPath)).toBe(true);
-    const second = installAssistant("cursor", tmp);
-    expect(second).toBe(cursorPath);
-    expect(fs.readFileSync(cursorPath, "utf8").split("repo-context:begin").length).toBe(2);
+    const second = installAssistant("cursor", { root: tmp, dryRun: false });
+    expect(second[0]!.path).toBe(cursorPath);
+    expect(fs.readFileSync(cursorPath, "utf8").split("scopekit:begin").length).toBe(2);
   });
 
   it("evaluates skill head-to-head verdict without superiority when tokens lose", () => {

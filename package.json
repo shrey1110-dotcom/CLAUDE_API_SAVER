@@ -1,17 +1,17 @@
 {
-  "name": "repo-context-mcp",
-  "version": "0.1.0",
-  "description": "Coding-agent context skill and CLI context broker with optional MCP support, compact repo graph, and context packs.",
+  "name": "scopekit",
+  "version": "0.2.0",
+  "description": "ScopeKit — task-complete context packs for AI coding agents. CLI-first context broker with optional MCP.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
+    "scopekit": "dist/index.js",
     "repo-context": "dist/index.js",
     "repo-context-mcp": "dist/index.js"
   },
   "files": [
     "dist",
     "README.md",
-    "docs",
     "examples",
     "LICENSE",
     "CHANGELOG.md"
@@ -45,7 +45,7 @@
     "test:security": "vitest run tests/security.test.ts",
     "test:benchmark": "vitest run tests/budget.test.ts tests/compressionBenchmark.test.ts tests/graphifyHeadToHead.test.ts tests/brokerProofMin.test.ts tests/skillCli.test.ts tests/proofMinimalLeakage.test.ts tests/contextEfficiency.test.ts",
     "test:graph": "vitest run tests/graph.test.ts",
-    "test:context": "vitest run tests/context.test.ts tests/multimodal.test.ts tests/selfIterate.test.ts tests/taskProfiles.test.ts tests/taskIntent.test.ts",
+    "test:context": "vitest run tests/context.test.ts tests/multimodal.test.ts tests/selfIterate.test.ts tests/taskProfiles.test.ts tests/taskIntent.test.ts tests/scopekitCli.test.ts",
     "test:client": "vitest run tests/clientAgnostic.test.ts",
     "test:all": "npm run build && npm run test && npm run test:edge && npm run test:security && npm run test:benchmark && npm run test:graph && npm run test:context && npm run test:client && npm run test:ab && npm run benchmark:compact && npm run validate && npm run graph:build && npm run context:build && npm run benchmark:workflow && npm run benchmark:graph && npm run benchmark:context && npm run benchmark:compression && npm run compat:report && npm run deep-test:report",
     "benchmark:compact": "node dist/benchmark/compact.js",
@@ -99,7 +99,10 @@
     "test:ab": "npm run build && vitest run tests/ab.test.ts tests/fileContextAb.test.ts tests/codexAdapter.test.ts tests/authDiscoveryQuality.test.ts tests/codexCliSupport.test.ts tests/failedCodexAnalyze.test.ts tests/toolLoopPolicy.test.ts tests/codexQa.test.ts tests/claudeUsage.test.ts tests/claudeAdapter.test.ts tests/claudeCliSupport.test.ts tests/claudeProofReport.test.ts",
     "benchmark:claude-pack-quality": "node dist/benchmark/claudePackQuality.js",
     "benchmark:claude-skill-head-to-head": "node dist/benchmark/claudeSkillHeadToHead.js",
-    "self:prove-claude-skill-head-to-head": "node dist/selfIterate/proveClaudeSkillHeadToHead.js"
+    "self:prove-claude-skill-head-to-head": "node dist/selfIterate/proveClaudeSkillHeadToHead.js",
+    "cli:smoke": "node scripts/cli-smoke.mjs",
+    "pack:check": "node scripts/pack-check.mjs",
+    "publish:dry-run": "npm run pack:check && npm publish --dry-run"
   },
   "engines": {
     "node": ">=18"
@@ -120,12 +123,15 @@
     "url": "git+https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git"
   },
   "keywords": [
+    "scopekit",
     "mcp",
     "model-context-protocol",
     "codex",
     "claude",
+    "cursor",
     "ai-coding",
     "context",
+    "context-pack",
     "knowledge-graph",
     "repository-analysis"
   ]

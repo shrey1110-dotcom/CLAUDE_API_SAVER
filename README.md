@@ -1,10 +1,93 @@
-# repo-context
+# ScopeKit
 
-**repo-context** is a coding-agent context skill that generates task-specific context packs for AI coding assistants. Use the **CLI/skill workflow by default**; **MCP is optional** for agents that want live tool access.
+**ScopeKit** — task-complete context packs for AI coding agents. Use the **CLI/skill workflow by default**; **MCP is optional** for agents that want live tool access.
 
-Package name remains `repo-context-mcp` for compatibility. Binaries: `repo-context` and `repo-context-mcp`.
+npm package: `scopekit`. Binaries: `scopekit` (primary), plus deprecated aliases `repo-context` and `repo-context-mcp`.
 
 Works with **Cursor**, **OpenAI Codex**, **Claude Code**, **Claude Desktop**, and any **stdio MCP** client.
+
+## Install and run
+
+### Install globally
+
+```bash
+npm install -g scopekit
+```
+
+### One-command repo setup
+
+Configures repo-local agent instructions (Cursor, Claude, Codex) in the current repository:
+
+```bash
+scopekit setup
+```
+
+### No global install
+
+```bash
+npx scopekit setup
+```
+
+### Index and pack
+
+```bash
+scopekit index .
+scopekit pack "Find auth/session logic" --profile claude
+```
+
+### Query
+
+```bash
+scopekit query "Where is auth handled?"
+```
+
+### Per-assistant integration
+
+```bash
+scopekit install cursor
+scopekit install claude
+scopekit install codex
+scopekit install mcp    # writes .scopekit/mcp-config.example.json
+```
+
+### Optional MCP server
+
+```bash
+scopekit mcp
+```
+
+### Profiles
+
+```bash
+scopekit pack "..." --profile ultra     # smallest (Codex-style)
+scopekit pack "..." --profile claude    # richer relationships (Claude/Cursor)
+scopekit pack "..." --profile default   # balanced
+```
+
+### Local development
+
+```bash
+npm install
+npm run build
+npm link
+scopekit --help
+scopekit setup --dry-run
+```
+
+### Backward compatibility
+
+`repo-context` and `repo-context-mcp` still work as deprecated aliases and print a rename notice.
+
+### Remote / cloud agents
+
+Commit the repo-local instruction files created by `scopekit setup` so remote agents can see them:
+
+```bash
+git add CLAUDE.md AGENTS.md .cursor/rules/scopekit.mdc .scopekit/
+git commit -m "chore: add ScopeKit agent instructions"
+```
+
+ScopeKit installs **repo-local** instructions — not a global install into Claude/Codex accounts.
 
 > **Token savings are not guaranteed.** This project includes A/B tooling to prove or disprove savings per client/task. Benchmarks measure MCP output size, not end-to-end client usage.
 
@@ -66,25 +149,24 @@ Agents often waste context on repeated `repo_map` / search / full-file reads. re
 
 MCP tools never write source code. Only local cache/telemetry files are written by npm scripts.
 
-## Quick start
+## Quick start (from source)
 
 ```bash
 git clone https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git
 cd CLAUDE_API_SAVER   # or your fork path
 npm install
 npm run build
-repo-context index .
-repo-context status
-repo-context pack "Where is auth implemented?" --budget 500 --format markdown
-repo-context pack "Plan a safe refactor" --profile claude   # richer Claude-optimized pack (budget 900)
-repo-context install cursor
-repo-context install codex
+scopekit setup
+scopekit index .
+scopekit status
+scopekit pack "Where is auth implemented?" --budget 500 --format markdown
+scopekit pack "Plan a safe refactor" --profile claude
 npm run doctor
 npm run benchmark:context
 npm run benchmark:compression
 ```
 
-Optional MCP: `repo-context mcp` (or configure as stdio MCP server via `repo-context-mcp`).
+Optional MCP: `scopekit mcp` (legacy alias: `repo-context-mcp`).
 
 ## Build graph and context
 

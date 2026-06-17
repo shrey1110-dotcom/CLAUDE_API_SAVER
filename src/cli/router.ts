@@ -7,16 +7,42 @@ import { getContextStatus } from "../context/broker.js";
 import { logContextQuery } from "../queries/logger.js";
 import { buildClaudeSkillPack, buildSkillPack, CLAUDE_PACK_DEFAULT_BUDGET, estimateTokensFromText } from "./skillPack.js";
 import { formatSkillMarkdown } from "./formatSkillMarkdown.js";
+import type { SkillMarkdownProfile } from "./formatSkillMarkdown.js";
 import { formatClaudeMarkdown } from "./formatClaudeMarkdown.js";
-import { installAssistant } from "./install.js";
+import {
+  formatInstallSummary,
+  installAssistant,
+  type AssistantTarget,
+  type InstallOptions,
+} from "./install.js";
+import { commandSetup } from "./setup.js";
+import {
+  cliCommandName,
+  formatHelp,
+  formatMcpHelp,
+  invokedBinary,
+  printRenameNoticeIfLegacy,
+  type InvokedBinary,
+} from "./branding.js";
 import type { ContextMode } from "../context/types.js";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const CLI_COMMANDS = new Set(["index", "query", "pack", "status", "mcp", "install", "help"]);
+const CLI_COMMANDS = new Set([
+  "index",
+  "query",
+  "pack",
+  "status",
+  "mcp",
+  "install",
+  "setup",
+  "help",
+]);
 
 export function isCliInvocation(argv = process.argv): boolean {
   const command = argv[2];
-  return Boolean(command && CLI_COMMANDS.has(command));
+  if (!command) return true;
+  if (command === "--help" || command === "-h") return true;
+  return CLI_COMMANDS.has(command);
 }
 
 function collectPositionalTask(argv: string[], commandIndex = 2): string | undefined {
@@ -32,8 +58,13 @@ function collectPositionalTask(argv: string[], commandIndex = 2): string | undef
   return positional.length > 0 ? positional.join(" ").trim() : undefined;
 }
 
-function runNpmScript(script: string, extraArgs: string[] = [], cwd = process.cwd()): number {
-  const result = spawnSync("npm", ["run", script, "--", ...extraArgs], { cwd, encoding: "utf8", stdio: "inherit" });
+function runPackageBuilder(relDistPath: string, root: string): number {
+  const script = path.join(PACKAGE_ROOT, relDistPath);
+  const result = spawnSync(process.execPath, [script, root], {
+    cwd: root,
+    encoding: "utf8",
+    stdio: "inherit",
+  });
   return result.status ?? 1;
 }
 
@@ -42,19 +73,23 @@ function asMode(value: string | undefined): ContextMode {
   return modes.includes(value as ContextMode) ? (value as ContextMode) : "discovery";
 }
 
-function commandIndex(args: string[]): number {
-  const root = readStringArg(parseCliArgs(args), "root") ?? args[3] ?? process.cwd();
-  const resolved = path.resolve(root);
-  const graphStatus = runNpmScript("graph:build", [], resolved);
-  if (graphStatus !== 0) return graphStatus;
-  const contextStatus = runNpmScript("context:build", [], resolved);
-  return contextStatus;
+function usagePrefix(binary: InvokedBinary): string {
+  return cliCommandName(binary);
 }
 
-function commandQuery(argv: string[]): number {
+function commandIndex(argv: string[], binary: InvokedBinary): number {
+  const flags = parseCliArgs(argv.slice(2));
+  const root = path.resolve(readStringArg(flags, "root") ?? argv[3] ?? process.cwd());
+  const graphStatus = runPackageBuilder("dist/graph/buildGraph.js", root);
+  if (graphStatus !== 0) return graphStatus;
+  return runPackageBuilder("dist/context/buildContext.js", root);
+}
+
+function commandQuery(argv: string[], binary: InvokedBinary): number {
   const task = collectPositionalTask(argv);
+  const cmd = usagePrefix(binary);
   if (!task) {
-    console.error('Usage: repo-context query "<question>" [--root path]');
+    console.error(`Usage: ${cmd} query "<question>" [--root path] [--budget 500]`);
     return 1;
   }
   const flags = parseCliArgs(argv.slice(2));
@@ -75,17 +110,25 @@ function commandQuery(argv: string[]): number {
   return 0;
 }
 
-function commandPack(argv: string[]): number {
+function resolveMarkdownProfile(profile: string, format: string): SkillMarkdownProfile {
+  if (profile === "ultra" || profile === "minimal") return profile === "minimal" ? "minimal" : "ultra";
+  if (format === "minimal") return "minimal";
+  if (format === "ultra") return "ultra";
+  return "standard";
+}
+
+function commandPack(argv: string[], binary: InvokedBinary): number {
   const task = collectPositionalTask(argv);
+  const cmd = usagePrefix(binary);
   if (!task) {
     console.error(
-      'Usage: repo-context pack "<question>" [--budget 500] [--format markdown|json] [--out path] [--root path]',
+      `Usage: ${cmd} pack "<question>" [--budget 500] [--profile default|ultra|claude] [--format markdown|json] [--out path] [--root path]`,
     );
     return 1;
   }
   const flags = parseCliArgs(argv.slice(2));
   const root = readStringArg(flags, "root") ?? process.cwd();
-  const profile = (readStringArg(flags, "profile") ?? "").toLowerCase();
+  const profile = (readStringArg(flags, "profile") ?? "default").toLowerCase();
   const isClaudeProfile = profile === "claude";
   const budget = readNumberArg(flags, "budget") ?? (isClaudeProfile ? CLAUDE_PACK_DEFAULT_BUDGET : 500);
   const format = (readStringArg(flags, "format") ?? "markdown").toLowerCase();
@@ -107,13 +150,12 @@ function commandPack(argv: string[]): number {
       conceptCount: 0,
       estimatedOutputTokens: pack.estimatedOutputTokens ?? 0,
       truncated: pack.truncated,
-      source: "repo-context:pack",
+      source: "scopekit:pack",
     },
     root,
   );
 
-  const markdownProfile =
-    format === "minimal" ? "minimal" : format === "ultra" ? "ultra" : "standard";
+  const markdownProfile = resolveMarkdownProfile(profile, format);
   const output =
     format === "json"
       ? `${JSON.stringify(pack, null, 2)}\n`
@@ -141,61 +183,80 @@ function commandStatus(argv: string[]): number {
   return 0;
 }
 
-function commandInstall(argv: string[]): number {
-  const target = argv[3];
-  if (!target || !["cursor", "codex", "claude"].includes(target)) {
-    console.error("Usage: repo-context install <cursor|codex|claude> [--root path]");
+function commandInstall(argv: string[], binary: InvokedBinary): number {
+  const target = argv[3] as AssistantTarget | undefined;
+  const cmd = usagePrefix(binary);
+  if (!target || !["cursor", "codex", "claude", "mcp"].includes(target)) {
+    console.error(`Usage: ${cmd} install <cursor|claude|codex|mcp> [--root path] [--dry-run] [--yes]`);
     return 1;
   }
   const flags = parseCliArgs(argv.slice(2));
-  const root = readStringArg(flags, "root") ?? process.cwd();
-  const written = installAssistant(target as "cursor" | "codex" | "claude", path.resolve(root));
-  console.log(`Installed repo-context skill instructions: ${written}`);
+  const root = path.resolve(readStringArg(flags, "root") ?? process.cwd());
+  const options: InstallOptions = { root, dryRun: Boolean(flags["dry-run"]) };
+  const results = installAssistant(target, options);
+
+  console.log("Configured:");
+  for (const line of formatInstallSummary(results)) {
+    console.log(line);
+  }
+
+  if (options.dryRun) {
+    console.log("\n(dry-run: no files were written)");
+    return 0;
+  }
+
+  console.log("\nNext:");
+  if (target === "claude") {
+    console.log('  scopekit pack "Your task" --profile claude');
+  } else if (target === "codex") {
+    console.log('  scopekit pack "Your task" --profile ultra');
+  } else if (target === "cursor") {
+    console.log('  scopekit pack "Your task" --profile claude');
+  } else {
+    console.log("  Paste `.scopekit/mcp-config.example.json` into your assistant MCP config and run `scopekit mcp`.");
+  }
   return 0;
 }
 
-function commandHelp(): number {
-  console.log(`repo-context — coding-agent context skill + optional MCP
-
-Usage:
-  repo-context index [path]              Build graph + context cache
-  repo-context query "<question>"        Compact query answer
-  repo-context pack "<question>"         Task-specific context pack
-  repo-context status                    Cache status
-  repo-context install <cursor|codex|claude>
-  repo-context mcp                       Start MCP server (optional)
-
-Pack options:
-  --budget 500 --format markdown|json --out path --root path
-  --profile claude   Richer Claude-optimized pack (default budget 900)
-
-Default workflow is CLI/skill mode. MCP is optional.`);
+function commandHelp(binary: InvokedBinary): number {
+  console.log(formatHelp(binary));
   return 0;
 }
 
 export async function runCli(argv = process.argv): Promise<number> {
+  const binary = invokedBinary(argv);
   const command = argv[2];
-  if (!command) return commandHelp();
+
+  if (!command || command === "help" || command === "--help" || command === "-h") {
+    if (binary === "repo-context-mcp" && !command) {
+      console.log(formatMcpHelp(binary));
+      return 0;
+    }
+    printRenameNoticeIfLegacy(binary);
+    return commandHelp(binary);
+  }
+
+  if (command !== "mcp") {
+    printRenameNoticeIfLegacy(binary);
+  }
 
   switch (command) {
     case "index":
-      return commandIndex(argv);
+      return commandIndex(argv, binary);
     case "query":
-      return commandQuery(argv);
+      return commandQuery(argv, binary);
     case "pack":
-      return commandPack(argv);
+      return commandPack(argv, binary);
     case "status":
       return commandStatus(argv);
+    case "setup":
+      return commandSetup(argv);
     case "install":
-      return commandInstall(argv);
-    case "help":
-    case "--help":
-    case "-h":
-      return commandHelp();
+      return commandInstall(argv, binary);
     case "mcp":
       return 0;
     default:
       console.error(`Unknown command: ${command}`);
-      return commandHelp() === 0 ? 1 : 1;
+      return commandHelp(binary) === 0 ? 1 : 1;
   }
 }
