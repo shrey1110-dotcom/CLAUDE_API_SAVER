@@ -1,0 +1,4 @@
+# Graphify build output is generated; exclude from GitHub language stats and diffs.
+graphify-out/** linguist-generated=true
+graphify-out/graph.html linguist-generated=true
+*.html linguist-detectable=false
