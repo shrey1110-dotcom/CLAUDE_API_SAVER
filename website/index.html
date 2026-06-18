@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="repo-context is a CLI and skill-first context broker for AI coding agents. Task-specific packs with exact files and symbols — without graph wandering."
+      content="ScopeKit builds task-complete context packs for AI coding agents. It gives Claude, Codex, and Cursor the files, symbols, tests, and validation commands they need for one task."
     />
-    <title>repo-context — Task-complete repo context for AI coding agents</title>
+    <title>ScopeKit — Task-complete context packs for AI coding agents</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -21,9 +21,9 @@
 
     <header class="nav" role="banner">
       <div class="container nav__inner">
-        <a class="logo" href="/" aria-label="repo-context home">
+        <a class="logo" href="/" aria-label="ScopeKit home">
           <span class="logo__mark" aria-hidden="true"></span>
-          repo-context
+          ScopeKit
         </a>
 
         <button
@@ -41,12 +41,16 @@
 
         <nav id="nav-menu" class="nav__menu" data-nav-menu data-open="false" aria-label="Primary">
           <ul class="nav__links">
-            <li><a href="#difference">How it works</a></li>
+            <li><a href="#install">Install</a></li>
+            <li><a href="#how-it-works">How it works</a></li>
             <li><a href="#benchmarks">Benchmarks</a></li>
-            <li><a href="#usage">Usage</a></li>
-            <li><a href="#trust">Proof</a></li>
+            <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER#readme">Docs</a></li>
+            <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER">GitHub</a></li>
           </ul>
-          <a class="nav__cta" href="#install">Get started</a>
+          <div class="nav__actions">
+            <a class="btn btn--secondary btn--sm" href="#benchmarks">View benchmarks</a>
+            <a class="nav__cta" href="#install">npm install</a>
+          </div>
         </nav>
       </div>
     </header>
@@ -54,363 +58,436 @@
     <main id="main">
       <!-- Hero -->
       <section class="hero" aria-labelledby="hero-title">
-        <div class="container">
-          <p class="hero__eyebrow">CLI / skill-first context broker</p>
+        <div class="container hero__inner">
+          <p class="hero__eyebrow">Published on npm · CLI-first</p>
           <h1 id="hero-title" class="hero__title">
-            Task-complete repo context for AI coding agents.
+            Task-complete context packs for AI coding agents.
           </h1>
           <p class="hero__subtitle">
-            repo-context gives Codex, Cursor, Claude, and other coding agents tiny
-            task-specific packs of the exact files and symbols they need — without
-            making them wander through a graph.
+            ScopeKit gives Claude, Codex, Cursor, and MCP clients the files, symbols, tests,
+            relationships, risks, and validation commands they need for a specific task.
+          </p>
+          <p class="hero__contrast">The right files, not a graph to wander.</p>
+
+          <div class="code-block hero__code" role="group" aria-label="Install commands">
+            <button class="code-block__copy" type="button" data-copy aria-controls="hero-code">Copy</button>
+            <pre id="hero-code"><code>npm install -g scopekit
+scopekit setup</code></pre>
+          </div>
+
+          <p class="hero__alt">
+            No global install:
+            <code>npx scopekit setup</code>
           </p>
 
-          <div class="hero__actions btn-group">
-            <a class="btn btn--primary" href="#install">Get started</a>
-            <a class="btn btn--secondary" href="#benchmarks">View benchmarks</a>
-          </div>
-
-          <div class="code-block" role="group" aria-label="Example commands">
-            <button
-              class="code-block__copy"
-              type="button"
-              data-copy
-              aria-controls="hero-code"
-            >
-              Copy
-            </button>
-            <pre id="hero-code"><code>repo-context index .
-repo-context pack "Find the auth/session logic" --budget 500 --format markdown</code></pre>
-          </div>
-
-          <div class="hero__metrics" aria-label="Key metrics">
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--green">~1,280×</span>
-              <span class="metric-card__label">Baseline-equivalent context compression</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value">Up to 25×</span>
-              <span class="metric-card__label">Smaller task context than Graphify best-effort</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--green">~94%</span>
-              <span class="metric-card__label">Median less supplied context</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--gold">5/5</span>
-              <span class="metric-card__label">Equal or better quality on benchmark tasks</span>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Metric strip -->
-      <section class="section section--border" aria-label="Performance metrics">
-        <div class="container">
-          <div class="metric-strip">
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--green">~1,280×</span>
-              <span class="metric-card__label">Baseline-equivalent context compression</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value">Up to 25×</span>
-              <span class="metric-card__label">Smaller task context than Graphify best-effort</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--green">~94%</span>
-              <span class="metric-card__label">Median less supplied context</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--gold">5/5</span>
-              <span class="metric-card__label">Quality wins in the benchmark suite</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value metric-card__value--gold">5/5</span>
-              <span class="metric-card__label">Lower median Codex usage wins</span>
-            </article>
-            <article class="metric-card">
-              <span class="metric-card__value">0</span>
-              <span class="metric-card__label">External LLM indexing tokens required</span>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Core difference -->
-      <section id="difference" class="section section--border" aria-labelledby="difference-title">
-        <div class="container">
-          <header class="section__header">
-            <h2 id="difference-title" class="section__title">The right files, not a graph to wander.</h2>
-            <p class="section__copy">
-              Graph tools make agents search for the right subgraph. repo-context gives them
-              the task-ready context directly: files, symbols, and why each one matters.
-            </p>
-          </header>
-
-          <div class="workflow-grid">
-            <article class="workflow-card" aria-labelledby="graph-workflow">
-              <h3 id="graph-workflow" class="workflow-card__title">Graph-first workflow</h3>
-              <ul class="workflow-card__list">
-                <li>
-                  <svg class="workflow-icon workflow-icon--neutral" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.5" />
-                  </svg>
-                  Build graph
-                </li>
-                <li>
-                  <svg class="workflow-icon workflow-icon--neutral" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.5" />
-                  </svg>
-                  Query graph
-                </li>
-                <li>
-                  <svg class="workflow-icon workflow-icon--neutral" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.5" />
-                  </svg>
-                  Hope retrieval lands on the right files
-                </li>
-                <li>
-                  <svg class="workflow-icon workflow-icon--neutral" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <circle cx="9" cy="9" r="3" stroke="currentColor" stroke-width="1.5" />
-                  </svg>
-                  Send larger context to the model
-                </li>
-              </ul>
-            </article>
-
-            <article class="workflow-card workflow-card--highlight" aria-labelledby="repo-workflow">
-              <h3 id="repo-workflow" class="workflow-card__title">repo-context workflow</h3>
-              <ul class="workflow-card__list">
-                <li>
-                  <svg class="workflow-icon workflow-icon--check" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Index repo locally
-                </li>
-                <li>
-                  <svg class="workflow-icon workflow-icon--check" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Generate task pack
-                </li>
-                <li>
-                  <svg class="workflow-icon workflow-icon--check" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Send exact files and symbols
-                </li>
-                <li>
-                  <svg class="workflow-icon workflow-icon--check" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <path d="M4 9l3.5 3.5L14 5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Keep context small and task-complete
-                </li>
-              </ul>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Benchmark comparison -->
-      <section id="benchmarks" class="section section--border" aria-labelledby="benchmarks-title">
-        <div class="container">
-          <header class="section__header">
-            <h2 id="benchmarks-title" class="section__title">
-              Benchmarked against Graphify best-effort retrieval.
-            </h2>
-            <p class="section__copy">
-              In a scoped 5-task repo-understanding benchmark using Codex CLI with supplied
-              context and no MCP tools, repo-context produced smaller context, equal or better
-              quality, and lower median Codex usage on every completed task.
-            </p>
-          </header>
-
-          <div class="table-wrap" role="region" aria-label="Benchmark comparison table" tabindex="0">
-            <table class="comparison-table">
-              <thead>
-                <tr>
-                  <th scope="col">Metric</th>
-                  <th scope="col">Graphify best-effort</th>
-                  <th scope="col">repo-context</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Context size</td>
-                  <td>Larger query/report context</td>
-                  <td>~94% smaller median context</td>
-                </tr>
-                <tr>
-                  <td>Best context gap</td>
-                  <td>Baseline</td>
-                  <td>Up to 25× smaller</td>
-                </tr>
-                <tr>
-                  <td>Quality</td>
-                  <td>Lower on measured tasks</td>
-                  <td>Equal or better on 5/5 tasks</td>
-                </tr>
-                <tr>
-                  <td>Task completeness</td>
-                  <td>Missed target files in benchmark tasks</td>
-                  <td>Task-complete on 5/5 tasks</td>
-                </tr>
-                <tr>
-                  <td>Median Codex usage</td>
-                  <td>Higher</td>
-                  <td>Lower on 5/5 tasks</td>
-                </tr>
-                <tr>
-                  <td>External LLM indexing</td>
-                  <td>Uses configured LLM backend</td>
-                  <td>0 external LLM indexing tokens</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- Big number -->
-      <section class="section section--border" aria-labelledby="compression-title">
-        <div class="container">
-          <div class="big-number">
-            <h2 id="compression-title" class="section__title">A bigger compression profile.</h2>
-            <span class="big-number__stat" aria-label="Approximately 1280 times baseline-equivalent context compression">~1,280×</span>
-            <p class="section__copy">
-              Graphify advertises 71.5× reduction versus naive full-context reading.
-              repo-context produced about 18× smaller median supplied context than Graphify
-              best-effort in our benchmark. Using the same baseline style, that corresponds
-              to a ~1,280× baseline-equivalent context-compression profile.
-            </p>
-            <p class="section__note">
-              This is a context-compression comparison, not a universal end-to-end token claim.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Usage modes -->
-      <section id="usage" class="section section--border" aria-labelledby="usage-title">
-        <div class="container">
-          <header class="section__header section__header--center">
-            <h2 id="usage-title" class="section__title">CLI-first. Skill-ready. Optional MCP.</h2>
-          </header>
-
-          <div class="modes-grid">
-            <article class="mode-card">
-              <h3 class="mode-card__label">CLI mode</h3>
-              <div class="mode-card__code">
-                <pre class="code-block"><code>repo-context query "Where is authentication implemented?"</code></pre>
-              </div>
-            </article>
-
-            <article class="mode-card">
-              <h3 class="mode-card__label">Skill mode</h3>
-              <div class="mode-card__code">
-                <pre class="code-block"><code>repo-context install codex
-repo-context install cursor
-repo-context install claude</code></pre>
-              </div>
-            </article>
-
-            <article class="mode-card">
-              <h3 class="mode-card__label">MCP mode</h3>
-              <div class="mode-card__code">
-                <pre class="code-block"><code>repo-context mcp</code></pre>
-              </div>
-            </article>
-          </div>
-
-          <p class="modes-footer">
-            Use repo-context as a simple command-line skill for any assistant. Turn on MCP
-            when your agent needs live tools.
+          <p class="hero__note">
+            Setup writes repo-local instructions for Claude, Codex, and Cursor. It does not
+            install anything into your AI account.
           </p>
+
+          <ul class="hero__metrics" aria-label="At a glance">
+            <li><span class="hero__metric-mark hero__metric-mark--green" aria-hidden="true"></span>Published on npm</li>
+            <li><span class="hero__metric-mark hero__metric-mark--green" aria-hidden="true"></span>5/5 Codex quality wins</li>
+            <li><span class="hero__metric-mark hero__metric-mark--gold" aria-hidden="true"></span>5/5 Claude equal-or-better quality</li>
+            <li><span class="hero__metric-mark hero__metric-mark--green" aria-hidden="true"></span>0 external LLM indexing required by ScopeKit</li>
+          </ul>
         </div>
       </section>
 
-      <!-- Feature grid -->
-      <section class="section section--border" aria-labelledby="features-title">
+      <!-- Install -->
+      <section id="install" class="section section--border" aria-labelledby="install-title">
         <div class="container">
-          <header class="section__header section__header--center">
-            <h2 id="features-title" class="section__title">Built for focused agent context</h2>
+          <header class="section__header">
+            <h2 id="install-title" class="section__title">Install in one command.</h2>
           </header>
 
-          <div class="feature-grid">
-            <article class="feature-card"><h3 class="feature-card__title">Task-specific packs</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">Exact files and symbols</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">Local deterministic indexing</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">No LLM indexing bill</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">Assistant install commands</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">Optional MCP tools</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">Audit-friendly benchmark artifacts</h3></article>
-            <article class="feature-card"><h3 class="feature-card__title">Small markdown output</h3></article>
-          </div>
-        </div>
-      </section>
-
-      <!-- Trust -->
-      <section id="trust" class="section section--border" aria-labelledby="trust-title">
-        <div class="container">
-          <div class="trust-box">
+          <div class="install-grid">
             <div>
-              <header class="section__header">
-                <h2 id="trust-title" class="section__title">Scoped claims. Reproducible artifacts.</h2>
-                <p class="section__copy">
-                  The benchmark suite preserves artifacts, failed runs, audit traces, and
-                  validation checks. Claims are scoped to measured tasks and usage mode.
-                </p>
-              </header>
+              <p class="install-label">Global install</p>
+              <div class="code-block" role="group" aria-label="Global install command">
+                <button class="code-block__copy" type="button" data-copy aria-controls="install-global">Copy</button>
+                <pre id="install-global"><code>npm install -g scopekit
+scopekit setup</code></pre>
+              </div>
+
+              <p class="install-label">Or run without installing</p>
+              <div class="code-block" role="group" aria-label="Npx command">
+                <button class="code-block__copy" type="button" data-copy aria-controls="install-npx">Copy</button>
+                <pre id="install-npx"><code>npx scopekit setup</code></pre>
+              </div>
             </div>
-            <ul class="trust-list">
-              <li>5-task supplied-context benchmark</li>
-              <li>Codex CLI measured runs</li>
-              <li>No MCP tools in skill-mode comparison</li>
-              <li>Audit checks for leakage and overfitting</li>
-              <li>Held-out rename and negative-control tests</li>
-              <li>Existing proof data preserved</li>
-            </ul>
+
+            <div class="install-aside">
+              <p class="install-aside__lead">
+                <code>scopekit setup</code> creates repo-local instruction files:
+              </p>
+              <ul class="file-list">
+                <li><code>CLAUDE.md</code></li>
+                <li><code>AGENTS.md</code></li>
+                <li><code>.cursor/rules/scopekit.mdc</code></li>
+                <li><code>.scopekit/mcp-config.example.json</code></li>
+              </ul>
+              <p class="install-aside__note">
+                For remote or cloud agents, commit those files so the agent can see them.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- Final CTA -->
-      <section id="install" class="cta section--border" aria-labelledby="cta-title">
+      <!-- Quick usage -->
+      <section class="section section--border" aria-labelledby="usage-title">
         <div class="container">
-          <div class="cta__inner">
-            <h2 id="cta-title" class="cta__title">
-              Give your coding agent less context — and better context.
-            </h2>
-            <a class="btn btn--primary" href="https://www.npmjs.com/package/repo-context-mcp">Install repo-context</a>
+          <header class="section__header">
+            <h2 id="usage-title" class="section__title">Index, pack, query.</h2>
+            <p class="section__copy">Three commands cover the common loop.</p>
+          </header>
 
-            <div class="cta__command">
-              <div class="code-block" role="group" aria-label="Install command">
-                <button
-                  class="code-block__copy"
-                  type="button"
-                  data-copy
-                  aria-controls="install-code"
-                >
-                  Copy
-                </button>
-                <pre id="install-code"><code>npm install -g repo-context</code></pre>
-              </div>
-            </div>
+          <div class="code-block" role="group" aria-label="Usage commands">
+            <button class="code-block__copy" type="button" data-copy aria-controls="usage-code">Copy</button>
+            <pre id="usage-code"><code>scopekit index .
+scopekit pack "Find auth/session logic" --profile claude
+scopekit query "Where is auth handled?"</code></pre>
+          </div>
 
-            <div class="cta__alt">
-              <div class="code-block" role="group" aria-label="Quick start commands">
-                <button
-                  class="code-block__copy"
-                  type="button"
-                  data-copy
-                  aria-controls="alt-code"
-                >
-                  Copy
-                </button>
-                <pre id="alt-code"><code>repo-context index .
-repo-context pack "Plan a safe edit" --budget 500</code></pre>
-              </div>
+          <div class="code-block code-block--spaced" role="group" aria-label="Ultra profile command">
+            <button class="code-block__copy" type="button" data-copy aria-controls="usage-ultra">Copy</button>
+            <pre id="usage-ultra"><code>scopekit pack "Plan a safe edit" --profile ultra</code></pre>
+          </div>
+
+          <dl class="profiles">
+            <div class="profiles__item">
+              <dt><code>default</code></dt>
+              <dd>Balanced pack.</dd>
             </div>
+            <div class="profiles__item">
+              <dt><code>ultra</code></dt>
+              <dd>Smallest packs for Codex-style workflows.</dd>
+            </div>
+            <div class="profiles__item">
+              <dt><code>claude</code></dt>
+              <dd>Richer relationships and risks for Claude and Cursor.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <!-- What ScopeKit does -->
+      <section class="section section--border" aria-labelledby="does-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="does-title" class="section__title">What ScopeKit does</h2>
+          </header>
+
+          <div class="card-grid card-grid--2">
+            <article class="card">
+              <h3 class="card__title">Finds the relevant files.</h3>
+              <p class="card__text">
+                ScopeKit ranks files and symbols for the task instead of dumping the whole repo.
+              </p>
+            </article>
+            <article class="card">
+              <h3 class="card__title">Adds relationships.</h3>
+              <p class="card__text">
+                It includes why files matter together: imports, tests, entrypoints, risks, and
+                validation commands.
+              </p>
+            </article>
+            <article class="card">
+              <h3 class="card__title">Fits the assistant.</h3>
+              <p class="card__text">
+                Use <code>--profile ultra</code> for smaller Codex packs or
+                <code>--profile claude</code> for richer Claude and Cursor packs.
+              </p>
+            </article>
+            <article class="card">
+              <h3 class="card__title">Keeps MCP optional.</h3>
+              <p class="card__text">
+                The CLI workflow works everywhere. MCP is available when a client wants live
+                tool access.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Example output -->
+      <section class="section section--border" aria-labelledby="example-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="example-title" class="section__title">Example pack</h2>
+            <p class="section__copy">
+              An illustrative pack for one task. These file names are an example, not files that
+              exist in every repo.
+            </p>
+          </header>
+
+          <div class="code-block code-block--example" role="group" aria-label="Example context pack">
+            <span class="code-block__tag">Example</span>
+            <pre><code>Task: Find auth/session logic
+
+Relevant files
+  src/auth/login.ts            login entrypoint
+  src/auth/session.ts          session validation
+  src/server/auth.controller.ts  API route layer
+
+Relationships
+  controller calls session service
+  login UI calls auth endpoint
+  tests cover session behavior
+
+Validation
+  npm test
+  npm run test:auth</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how-it-works" class="section section--border" aria-labelledby="how-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="how-title" class="section__title">How it works</h2>
+          </header>
+
+          <ol class="steps">
+            <li class="step">
+              <span class="step__num" aria-hidden="true">1</span>
+              <p class="step__text">Index repo structure.</p>
+            </li>
+            <li class="step">
+              <span class="step__num" aria-hidden="true">2</span>
+              <p class="step__text">Detect task intent.</p>
+            </li>
+            <li class="step">
+              <span class="step__num" aria-hidden="true">3</span>
+              <p class="step__text">Rank files, symbols, tests, and configs.</p>
+            </li>
+            <li class="step">
+              <span class="step__num" aria-hidden="true">4</span>
+              <p class="step__text">Add nearby relationships.</p>
+            </li>
+            <li class="step">
+              <span class="step__num" aria-hidden="true">5</span>
+              <p class="step__text">Emit a markdown context pack.</p>
+            </li>
+            <li class="step">
+              <span class="step__num" aria-hidden="true">6</span>
+              <p class="step__text">Optionally expose the same workflow through MCP.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Benchmarks -->
+      <section id="benchmarks" class="section section--border" aria-labelledby="bench-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="bench-title" class="section__title">Benchmarks</h2>
+            <p class="section__copy">
+              Scoped to this repo, these tasks, and these clients. Not universal superiority claims.
+            </p>
+          </header>
+
+          <div class="card-grid card-grid--3">
+            <article class="bench-card">
+              <h3 class="bench-card__title">Codex — supplied context</h3>
+              <p class="bench-card__text">
+                Across a 5-task Codex supplied-context benchmark, ScopeKit produced ~94% smaller
+                supplied context than Graphify best-effort, achieved equal-or-better quality on
+                5/5 tasks, and lowered median Codex usage on 5/5 tasks.
+              </p>
+            </article>
+            <article class="bench-card">
+              <h3 class="bench-card__title">Claude — supplied context</h3>
+              <p class="bench-card__text">
+                Across a 5-task Claude supplied-context benchmark in Cursor, ScopeKit's Claude
+                profile produced 79–88% smaller supplied context than Graphify-derived context,
+                with equal-or-better quality on 5/5 tasks. Exact Claude token usage was not
+                available from Cursor, so no Claude token-savings claim is made.
+              </p>
+            </article>
+            <article class="bench-card">
+              <h3 class="bench-card__title">MCP locked-mode</h3>
+              <p class="bench-card__text">Scoped Codex locked-mode MCP proofs showed:</p>
+              <ul class="bench-card__list">
+                <li>80.0% mean reduction on auth-discovery</li>
+                <li>94.3% mean reduction on impact-analysis</li>
+              </ul>
+            </article>
+          </div>
+
+          <p class="section__note">These are scoped benchmarks, not universal superiority claims.</p>
+
+          <ul class="link-row">
+            <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks.md">docs/benchmarks.md</a></li>
+            <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks/skill-head-to-head.md">skill-head-to-head.md</a></li>
+            <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/tree/main/docs/proofs">docs/proofs/</a></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ScopeKit vs Graphify -->
+      <section class="section section--border" aria-labelledby="vs-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="vs-title" class="section__title">Context packs vs knowledge graphs.</h2>
+            <p class="section__copy">
+              Graphify builds a persistent graph to explore a codebase. ScopeKit builds a small
+              task packet for the moment an agent needs to act.
+            </p>
+          </header>
+
+          <div class="card-grid card-grid--2">
+            <article class="card">
+              <h3 class="card__title">Graphify</h3>
+              <ul class="plain-list">
+                <li>Queryable knowledge graph</li>
+                <li>Graph visualization and reports</li>
+                <li>Multi-modal graph extraction</li>
+                <li>Good for exploring system structure</li>
+              </ul>
+            </article>
+            <article class="card card--accent">
+              <h3 class="card__title">ScopeKit</h3>
+              <ul class="check-list">
+                <li>Task-specific context pack</li>
+                <li>Client-specific profiles</li>
+                <li>No external LLM indexing required</li>
+                <li>Good for the smallest useful packet before an agent edits or reasons</li>
+              </ul>
+            </article>
+          </div>
+
+          <p class="closing-line">
+            Use a graph when you want to explore. Use a context pack when the agent needs to do
+            the task.
+          </p>
+        </div>
+      </section>
+
+      <!-- Assistant setup -->
+      <section class="section section--border" aria-labelledby="assistant-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="assistant-title" class="section__title">Set up your assistant.</h2>
+            <p class="section__copy">
+              These write repo-local files. For remote or cloud agents, commit them.
+            </p>
+          </header>
+
+          <div class="code-block" role="group" aria-label="Assistant install commands">
+            <button class="code-block__copy" type="button" data-copy aria-controls="assistant-code">Copy</button>
+            <pre id="assistant-code"><code>scopekit install claude
+scopekit install codex
+scopekit install cursor
+scopekit install mcp</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Learn more -->
+      <section class="section section--border" aria-labelledby="learn-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="learn-title" class="section__title">Learn more</h2>
+          </header>
+
+          <div class="card-grid card-grid--3">
+            <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER#core-commands">
+              <h3 class="learn-card__title">CLI command reference</h3>
+              <span class="learn-card__arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/client-configs/claude-code.md">
+              <h3 class="learn-card__title">Claude and Cursor setup</h3>
+              <span class="learn-card__arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/client-configs/codex.md">
+              <h3 class="learn-card__title">Codex setup</h3>
+              <span class="learn-card__arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/client-configs/generic-stdio.md">
+              <h3 class="learn-card__title">Optional MCP</h3>
+              <span class="learn-card__arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks.md">
+              <h3 class="learn-card__title">Benchmark methodology</h3>
+              <span class="learn-card__arrow" aria-hidden="true">→</span>
+            </a>
+            <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/proofs/README.md">
+              <h3 class="learn-card__title">Proofs and caveats</h3>
+              <span class="learn-card__arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="section section--border" aria-labelledby="faq-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="faq-title" class="section__title">FAQ</h2>
+          </header>
+
+          <div class="faq">
+            <details class="faq__item">
+              <summary>Is ScopeKit a Graphify replacement?</summary>
+              <p>
+                No. Graphify builds a queryable graph for exploring a codebase. ScopeKit builds a
+                small task pack for the moment an agent acts. They solve different problems.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Does ScopeKit require an API key?</summary>
+              <p>No. Local indexing and packing need no API key and no external service.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Does ScopeKit send code to an LLM?</summary>
+              <p>
+                No. Indexing and packing run locally. ScopeKit does not send your code to an LLM
+                to build packs.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Does it work without MCP?</summary>
+              <p>Yes. The CLI workflow is the default. MCP is optional for clients that want live tools.</p>
+            </details>
+            <details class="faq__item">
+              <summary>Does <code>scopekit setup</code> install a skill into Claude or Codex accounts?</summary>
+              <p>
+                No. It writes repo-local instruction files. It does not install anything globally
+                into your Claude or Codex account.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>How do I use it with remote or cloud agents?</summary>
+              <p>
+                Run <code>scopekit setup</code>, then commit the generated instruction files so
+                the remote agent can read them.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>Can I still use repo-context?</summary>
+              <p>
+                Yes. The <code>repo-context</code> and <code>repo-context-mcp</code> commands
+                still work as deprecated aliases. New setups should use <code>scopekit</code>.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>What claims are proven?</summary>
+              <p>
+                The scoped benchmarks above: smaller supplied context and equal-or-better quality
+                on the measured Codex and Claude tasks, and the locked-mode MCP reductions on
+                auth-discovery and impact-analysis.
+              </p>
+            </details>
+            <details class="faq__item">
+              <summary>What claims are not proven?</summary>
+              <p>
+                Universal superiority over Graphify, guaranteed token savings on every task, and
+                Claude token savings (exact Claude usage was not available from Cursor).
+              </p>
+            </details>
           </div>
         </div>
       </section>
@@ -418,16 +495,14 @@ repo-context pack "Plan a safe edit" --budget 500</code></pre>
 
     <footer class="footer" role="contentinfo">
       <div class="container footer__inner">
-        <span class="footer__brand">repo-context</span>
+        <span class="footer__brand">ScopeKit</span>
         <ul class="footer__links">
+          <li><a href="https://www.npmjs.com/package/scopekit">npm package</a></li>
+          <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER">GitHub</a></li>
           <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER#readme">Docs</a></li>
           <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks.md">Benchmarks</a></li>
-          <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER">GitHub</a></li>
-          <li><a href="#install">Install</a></li>
-          <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/safety.md">Security</a></li>
           <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/LICENSE">License</a></li>
         </ul>
-        <p class="footer__copy">MIT License · CLI/skill-first context broker for AI coding agents</p>
       </div>
     </footer>
 

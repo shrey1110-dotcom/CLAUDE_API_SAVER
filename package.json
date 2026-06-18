@@ -20,6 +20,8 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "site:dev": "python3 -m http.server 8765 --directory website",
+    "site:preview": "python3 -m http.server 8765 --directory website",
     "graph:build": "node dist/graph/buildGraph.js",
     "context:build": "node dist/context/buildContext.js",
     "context:pack": "node dist/context/packContext.js",
