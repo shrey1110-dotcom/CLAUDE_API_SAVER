@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ScopeKit builds task-complete context packs for AI coding agents. It gives Claude, Codex, and Cursor the files, symbols, tests, relationships, risks, and validation commands they need for one task."
+      content="ScopeKit builds context packs for AI coding assistants. It gives Claude, Codex, and Cursor the files, symbols, tests, relationships, risks, and validation commands they need for one task."
     />
-    <title>ScopeKit — Give coding agents the right files before they search</title>
+    <title>ScopeKit — Context packs for AI coding assistants</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -59,26 +59,25 @@
       <!-- Hero -->
       <section class="hero" aria-labelledby="hero-title">
         <div class="container hero__inner">
-          <p class="hero__eyebrow">Published on npm · CLI-first · Optional MCP</p>
+          <p class="hero__eyebrow">Published on npm · Context packs · Optional MCP</p>
+          <p class="hero__category">Context packs for AI coding assistants</p>
           <h1 id="hero-title" class="hero__title">
             Give coding agents the right files before they search.
           </h1>
           <p class="hero__subtitle">
-            ScopeKit creates small task packs with the files, symbols, tests, relationships,
-            risks, and validation commands an agent needs for one job.
+            ScopeKit gives Claude, Codex, and Cursor a small task pack: files, symbols, tests,
+            relationships, risks, and validation commands for one job.
           </p>
-          <p class="hero__contrast">Not a graph to wander. A task pack to use.</p>
+          <p class="hero__contrast">The right files, not a graph to wander.</p>
 
           <div class="hero__command">
             <div class="code-block code-block--hero" role="group" aria-label="Run ScopeKit setup with npx">
               <button class="code-block__copy" type="button" data-copy aria-controls="hero-npx">Copy</button>
               <pre id="hero-npx"><code><span class="tok-muted">$</span> npx scopekit setup</code></pre>
             </div>
-            <div class="code-block code-block--hero-alt" role="group" aria-label="Install globally">
-              <button class="code-block__copy" type="button" data-copy aria-controls="hero-global">Copy</button>
-              <pre id="hero-global"><code><span class="tok-muted">$</span> npm install -g scopekit
-<span class="tok-muted">$</span> scopekit setup</code></pre>
-            </div>
+            <p class="hero__secondary">
+              or <code>npm install -g scopekit &amp;&amp; scopekit setup</code>
+            </p>
           </div>
 
           <div class="hero__actions">
@@ -87,47 +86,43 @@
             <a class="hero__link" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER">GitHub →</a>
           </div>
 
-          <ul class="proof-strip" aria-label="Benchmark highlights">
-            <li class="proof-strip__item">
-              <span class="proof-strip__value proof-strip__value--green">~1,280×</span>
-              <span class="proof-strip__label">baseline-equivalent context compression</span>
-            </li>
-            <li class="proof-strip__item">
-              <span class="proof-strip__value">Up to 25×</span>
-              <span class="proof-strip__label">smaller than Graphify best-effort</span>
-            </li>
-            <li class="proof-strip__item">
-              <span class="proof-strip__value proof-strip__value--gold">5/5</span>
-              <span class="proof-strip__label">Codex lower median usage wins</span>
-            </li>
-            <li class="proof-strip__item">
-              <span class="proof-strip__value proof-strip__value--gold">5/5</span>
-              <span class="proof-strip__label">Claude equal-or-better quality</span>
-            </li>
-            <li class="proof-strip__item">
-              <span class="proof-strip__value proof-strip__value--green">0</span>
-              <span class="proof-strip__label">external LLM indexing tokens</span>
-            </li>
-          </ul>
+          <div class="hero__proof">
+            <div class="headline-metric">
+              <span class="headline-metric__value">~1,280×</span>
+              <span class="headline-metric__label">baseline-equivalent context compression</span>
+              <span class="headline-metric__sub">
+                Using Graphify's 71.5× full-context baseline style and ScopeKit's ~18× smaller
+                median supplied context in our benchmark.
+              </span>
+            </div>
+
+            <ul class="proof-list" aria-label="Benchmark highlights">
+              <li><span class="proof-list__mark" aria-hidden="true"></span>Up to 25× smaller task context</li>
+              <li><span class="proof-list__mark" aria-hidden="true"></span>~94% less supplied context</li>
+              <li><span class="proof-list__mark" aria-hidden="true"></span>Lower Codex usage on every measured task</li>
+              <li><span class="proof-list__mark" aria-hidden="true"></span>Equal-or-better Claude answers on every measured task</li>
+              <li><span class="proof-list__mark" aria-hidden="true"></span>0 external LLM indexing tokens</li>
+            </ul>
+          </div>
 
           <p class="hero__footnote">
-            Scoped benchmark results. The ~1,280× figure is baseline-equivalent context
-            compression, not a universal end-to-end token claim.
+            Scoped benchmark results. Context-compression comparison, not a universal end-to-end
+            token claim.
           </p>
         </div>
       </section>
 
-      <!-- Install -->
+      <!-- Install and run -->
       <section id="install" class="section section--border" aria-labelledby="install-title">
         <div class="container">
           <header class="section__header">
-            <h2 id="install-title" class="section__title">Install in one command.</h2>
+            <h2 id="install-title" class="section__title">Install and run.</h2>
           </header>
 
           <div class="install-layout">
             <div class="install-cards">
               <article class="install-card">
-                <h3 class="install-card__title">Try without installing</h3>
+                <h3 class="install-card__title">Run with npx</h3>
                 <div class="code-block" role="group" aria-label="Run with npx">
                   <button class="code-block__copy" type="button" data-copy aria-controls="install-npx">Copy</button>
                   <pre id="install-npx"><code><span class="tok-muted">$</span> npx scopekit setup</code></pre>
@@ -153,14 +148,14 @@
               </ul>
               <p class="install-aside__note">
                 These are repo-local instruction files. For cloud agents, commit them so the
-                agent can see them.
+                agent can read them.
               </p>
             </aside>
           </div>
         </div>
       </section>
 
-      <!-- What you get -->
+      <!-- A task pack, not a repo dump -->
       <section class="section section--border" aria-labelledby="get-title">
         <div class="container">
           <header class="section__header">
@@ -169,7 +164,7 @@
 
           <div class="beforeafter">
             <article class="beforeafter__col">
-              <h3 class="beforeafter__label">Before</h3>
+              <h3 class="beforeafter__label">Without a pack</h3>
               <ul class="plain-list">
                 <li>Agent searches the repo</li>
                 <li>Reads broad files</li>
@@ -191,7 +186,7 @@
         </div>
       </section>
 
-      <!-- Quick usage -->
+      <!-- Usage + example side by side -->
       <section class="section section--border" aria-labelledby="usage-title">
         <div class="container">
           <header class="section__header">
@@ -199,82 +194,115 @@
             <p class="section__copy">Three commands cover the common loop.</p>
           </header>
 
-          <div class="code-block" role="group" aria-label="Usage commands">
-            <button class="code-block__copy" type="button" data-copy aria-controls="usage-code">Copy</button>
-            <pre id="usage-code"><code><span class="tok-muted">$</span> scopekit index .
+          <div class="usage-layout">
+            <div class="usage-commands">
+              <div class="code-block" role="group" aria-label="Usage commands">
+                <button class="code-block__copy" type="button" data-copy aria-controls="usage-code">Copy</button>
+                <pre id="usage-code"><code><span class="tok-muted">$</span> scopekit index .
 <span class="tok-muted">$</span> scopekit pack <span class="tok-str">"Find auth/session logic"</span> --profile claude
 <span class="tok-muted">$</span> scopekit query <span class="tok-str">"Where is auth handled?"</span></code></pre>
-          </div>
-
-          <div class="code-block code-block--spaced" role="group" aria-label="Ultra profile command">
-            <button class="code-block__copy" type="button" data-copy aria-controls="usage-ultra">Copy</button>
-            <pre id="usage-ultra"><code><span class="tok-muted">$</span> scopekit pack <span class="tok-str">"Plan a safe edit"</span> --profile ultra</code></pre>
-          </div>
-
-          <dl class="profiles">
-            <div class="profiles__item">
-              <dt><code>default</code></dt>
-              <dd>Balanced pack.</dd>
-            </div>
-            <div class="profiles__item">
-              <dt><code>ultra</code></dt>
-              <dd>Smallest packs for Codex-style workflows.</dd>
-            </div>
-            <div class="profiles__item">
-              <dt><code>claude</code></dt>
-              <dd>Richer relationships and risks for Claude and Cursor.</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-
-      <!-- Example pack -->
-      <section class="section section--border" aria-labelledby="example-title">
-        <div class="container">
-          <header class="section__header">
-            <h2 id="example-title" class="section__title">Example pack</h2>
-            <p class="section__copy">
-              A small packet an agent can paste into Claude, Codex, or Cursor.
-            </p>
-          </header>
-
-          <div class="pack" role="group" aria-label="Illustrative context pack">
-            <div class="pack__bar">
-              <span class="pack__dot" aria-hidden="true"></span>
-              <span class="pack__dot" aria-hidden="true"></span>
-              <span class="pack__dot" aria-hidden="true"></span>
-              <span class="pack__name">scopekit pack "Find auth/session logic" --profile claude</span>
-              <span class="pack__tag">Illustrative example</span>
-            </div>
-            <div class="pack__body">
-              <div class="pack__group">
-                <span class="pack__heading">Task</span>
-                <p class="pack__line">Find auth/session logic</p>
               </div>
-              <div class="pack__group">
-                <span class="pack__heading">Files</span>
-                <pre class="pack__code"><code><span class="tok-file">src/auth/login.ts</span>              login entrypoint
+              <div class="code-block code-block--spaced" role="group" aria-label="Ultra profile command">
+                <button class="code-block__copy" type="button" data-copy aria-controls="usage-ultra">Copy</button>
+                <pre id="usage-ultra"><code><span class="tok-muted">$</span> scopekit pack <span class="tok-str">"Plan a safe edit"</span> --profile ultra</code></pre>
+              </div>
+              <dl class="profiles">
+                <div class="profiles__item">
+                  <dt><code>default</code></dt>
+                  <dd>Balanced pack.</dd>
+                </div>
+                <div class="profiles__item">
+                  <dt><code>ultra</code></dt>
+                  <dd>Smallest packs for Codex-style workflows.</dd>
+                </div>
+                <div class="profiles__item">
+                  <dt><code>claude</code></dt>
+                  <dd>Richer relationships and risks for Claude and Cursor.</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div class="pack" role="group" aria-label="Illustrative context pack">
+              <div class="pack__bar">
+                <span class="pack__dot" aria-hidden="true"></span>
+                <span class="pack__dot" aria-hidden="true"></span>
+                <span class="pack__dot" aria-hidden="true"></span>
+                <span class="pack__name">scopekit pack "Find auth/session logic"</span>
+                <span class="pack__tag">Example</span>
+              </div>
+              <div class="pack__body">
+                <div class="pack__group">
+                  <span class="pack__heading">Task</span>
+                  <p class="pack__line">Find auth/session logic</p>
+                </div>
+                <div class="pack__group">
+                  <span class="pack__heading">Files</span>
+                  <pre class="pack__code"><code><span class="tok-file">src/auth/login.ts</span>              login entrypoint
 <span class="tok-file">src/auth/session.ts</span>            session validation
 <span class="tok-file">src/server/auth.controller.ts</span>  API route layer
 <span class="tok-file">src/ui/LoginPage.tsx</span>           user login flow</code></pre>
-              </div>
-              <div class="pack__group">
-                <span class="pack__heading">Relationships</span>
-                <pre class="pack__code"><code>controller -> session service
+                </div>
+                <div class="pack__group">
+                  <span class="pack__heading">Relationships</span>
+                  <pre class="pack__code"><code>controller -> session service
 login page -> auth endpoint
 tests -> session behavior</code></pre>
-              </div>
-              <div class="pack__group">
-                <span class="pack__heading pack__heading--gold">Risks</span>
-                <pre class="pack__code"><code>session changes can break login persistence
+                </div>
+                <div class="pack__group">
+                  <span class="pack__heading pack__heading--gold">Risks</span>
+                  <pre class="pack__code"><code>session changes can break login persistence
 API and UI need matching assumptions</code></pre>
-              </div>
-              <div class="pack__group">
-                <span class="pack__heading pack__heading--green">Validate</span>
-                <pre class="pack__code"><code>npm test
+                </div>
+                <div class="pack__group">
+                  <span class="pack__heading pack__heading--green">Validate</span>
+                  <pre class="pack__code"><code>npm test
 npm run test:auth</code></pre>
+                </div>
               </div>
             </div>
+          </div>
+          <p class="usage-note">Illustrative pack. File names are an example, not files in every repo.</p>
+        </div>
+      </section>
+
+      <!-- Worked examples -->
+      <section class="section section--border" aria-labelledby="worked-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="worked-title" class="section__title">Worked examples</h2>
+            <p class="section__copy">What the scoped benchmarks and the npm package actually showed.</p>
+          </header>
+
+          <div class="card-grid card-grid--2">
+            <article class="worked-card">
+              <h3 class="worked-card__title">Codex supplied-context suite</h3>
+              <p class="worked-card__text">
+                Five repo-understanding tasks. ScopeKit used ~94% less supplied context and lower
+                median Codex usage on every measured task.
+              </p>
+            </article>
+            <article class="worked-card">
+              <h3 class="worked-card__title">Claude supplied-context suite</h3>
+              <p class="worked-card__text">
+                ScopeKit's Claude profile used 79–88% less supplied context with equal-or-better
+                answers on every measured task. Exact Claude token usage was not available from
+                Cursor.
+              </p>
+            </article>
+            <article class="worked-card">
+              <h3 class="worked-card__title">MCP locked-mode proofs</h3>
+              <p class="worked-card__text">
+                Scoped Codex MCP proofs showed 80.0% mean reduction on auth-discovery and 94.3%
+                mean reduction on impact-analysis.
+              </p>
+            </article>
+            <article class="worked-card">
+              <h3 class="worked-card__title">npm install check</h3>
+              <p class="worked-card__text">
+                Published as <code>scopekit</code>. Works with <code>npm install -g scopekit</code>
+                and <code>npx scopekit setup</code>.
+              </p>
+            </article>
           </div>
         </div>
       </section>
@@ -293,18 +321,18 @@ npm run test:auth</code></pre>
           <div class="metric-row">
             <article class="metric-big">
               <span class="metric-big__value metric-big__value--green">~94%</span>
-              <span class="metric-big__label">median smaller supplied context</span>
-              <span class="metric-big__sub">Codex 5-task suite</span>
+              <span class="metric-big__label">less supplied context</span>
+              <span class="metric-big__sub">Codex 5-task suite, median</span>
             </article>
             <article class="metric-big">
-              <span class="metric-big__value metric-big__value--gold">5/5</span>
-              <span class="metric-big__label">lower median Codex usage wins</span>
-              <span class="metric-big__sub">supplied-context benchmark</span>
+              <span class="metric-big__value metric-big__value--gold">Every task</span>
+              <span class="metric-big__label">lower median Codex usage</span>
+              <span class="metric-big__sub">measured supplied-context tasks</span>
             </article>
             <article class="metric-big">
               <span class="metric-big__value metric-big__value--green">79–88%</span>
               <span class="metric-big__label">smaller Claude context</span>
-              <span class="metric-big__sub">equal-or-better quality on 5/5</span>
+              <span class="metric-big__sub">equal-or-better answers</span>
             </article>
           </div>
 
@@ -326,17 +354,17 @@ npm run test:auth</code></pre>
                 <tr>
                   <td>Codex quality</td>
                   <td>Baseline</td>
-                  <td>Equal-or-better on 5/5</td>
+                  <td>Equal-or-better on every measured task</td>
                 </tr>
                 <tr>
                   <td>Codex median usage</td>
                   <td>Baseline</td>
-                  <td>Lower on 5/5</td>
+                  <td>Lower on every measured task</td>
                 </tr>
                 <tr>
                   <td>Claude quality</td>
                   <td>Baseline</td>
-                  <td>Equal-or-better on 5/5</td>
+                  <td>Equal-or-better on every measured task</td>
                 </tr>
                 <tr>
                   <td>Claude tokens</td>
@@ -353,9 +381,13 @@ npm run test:auth</code></pre>
           </div>
 
           <p class="bench-statement">
-            ScopeKit beat Graphify best-effort in our scoped supplied-context benchmark suite.
+            In this scoped supplied-context suite, ScopeKit produced smaller task packs, matched
+            or improved answer quality, and lowered Codex median usage.
           </p>
-          <p class="section__note">These are scoped benchmark claims, not universal superiority claims.</p>
+          <p class="section__note">
+            Scoped benchmark claims, tied to specific repos, tasks, and clients (5/5 measured
+            tasks). Not a universal superiority claim.
+          </p>
 
           <ul class="link-row">
             <li><a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks.md">docs/benchmarks.md</a></li>
@@ -371,10 +403,10 @@ npm run test:auth</code></pre>
           <header class="section__header">
             <h2 id="compression-title" class="section__title">Why the compression number is bigger.</h2>
             <p class="section__copy">
-              Graphify advertises 71.5× reduction against naive full-context reading. In our
-              benchmark, ScopeKit's supplied context was about 18× smaller than Graphify
-              best-effort on median. Using the same full-context baseline style, that is roughly
-              1,280× baseline-equivalent context compression.
+              Graphify reports 71.5× fewer tokens than reading a full corpus. In our benchmark,
+              ScopeKit's supplied context was about 18× smaller than Graphify best-effort on
+              median. Using the same full-context baseline style, that is roughly 1,280×
+              baseline-equivalent context compression.
             </p>
           </header>
 
@@ -390,7 +422,7 @@ npm run test:auth</code></pre>
           </div>
 
           <p class="section__note">
-            This is a context-compression comparison, not a universal end-to-end token claim.
+            Context-compression comparison, not a universal end-to-end token claim.
           </p>
         </div>
       </section>
@@ -407,42 +439,42 @@ npm run test:auth</code></pre>
               <span class="step__num" aria-hidden="true">1</span>
               <div>
                 <p class="step__title">Index repo structure</p>
-                <p class="step__text">Scan files, symbols, imports, and configs locally.</p>
+                <p class="step__text">Scans files, symbols, imports, and configs locally.</p>
               </div>
             </li>
             <li class="step">
               <span class="step__num" aria-hidden="true">2</span>
               <div>
-                <p class="step__title">Detect the task</p>
-                <p class="step__text">Read the task text and map it to relevant areas of the repo.</p>
+                <p class="step__title">Read the task</p>
+                <p class="step__text">Maps the task text to relevant repo areas.</p>
               </div>
             </li>
             <li class="step">
               <span class="step__num" aria-hidden="true">3</span>
               <div>
-                <p class="step__title">Rank files, symbols, tests, and configs</p>
-                <p class="step__text">Score what matters for this task and drop the rest.</p>
+                <p class="step__title">Rank what matters</p>
+                <p class="step__text">Scores files, symbols, tests, and configs.</p>
               </div>
             </li>
             <li class="step">
               <span class="step__num" aria-hidden="true">4</span>
               <div>
                 <p class="step__title">Add relationships and risks</p>
-                <p class="step__text">Note how files connect and what an edit might break.</p>
+                <p class="step__text">Notes how files connect and what an edit might break.</p>
               </div>
             </li>
             <li class="step">
               <span class="step__num" aria-hidden="true">5</span>
               <div>
                 <p class="step__title">Emit a markdown pack</p>
-                <p class="step__text">Output a compact packet the agent can read directly.</p>
+                <p class="step__text">Outputs a compact packet the agent can read directly.</p>
               </div>
             </li>
             <li class="step">
               <span class="step__num" aria-hidden="true">6</span>
               <div>
-                <p class="step__title">Optional MCP for live tools</p>
-                <p class="step__text">Expose the same workflow over stdio when a client wants it.</p>
+                <p class="step__title">Optional MCP</p>
+                <p class="step__text">Expose the same workflow over stdio when a client wants live tools.</p>
               </div>
             </li>
           </ol>
@@ -455,8 +487,8 @@ npm run test:auth</code></pre>
           <header class="section__header">
             <h2 id="vs-title" class="section__title">Context packs vs knowledge graphs.</h2>
             <p class="section__copy">
-              Use a graph when you want to explore. Use a context pack when the agent needs to do
-              the task.
+              Graph tools are useful when you want to explore. ScopeKit is for the moment an agent
+              needs to act.
             </p>
           </header>
 
@@ -466,7 +498,7 @@ npm run test:auth</code></pre>
               <ul class="plain-list">
                 <li>Queryable knowledge graph</li>
                 <li>Interactive graph and report outputs</li>
-                <li>Good for exploring system structure</li>
+                <li>Useful for exploring system structure</li>
                 <li>Optional MCP support</li>
               </ul>
             </article>
@@ -476,7 +508,7 @@ npm run test:auth</code></pre>
                 <li>Task-specific context pack</li>
                 <li>Client-specific profiles</li>
                 <li>No external LLM indexing required</li>
-                <li>Good for the smallest useful packet before an agent edits or reasons</li>
+                <li>Useful before an agent edits, debugs, or explains code</li>
               </ul>
             </article>
           </div>
@@ -484,6 +516,42 @@ npm run test:auth</code></pre>
           <p class="closing-line">
             Graphify gives the agent a graph to query. ScopeKit gives the agent the packet it needs.
           </p>
+        </div>
+      </section>
+
+      <!-- Trust and scope -->
+      <section class="section section--border section--tint" aria-labelledby="trust-title">
+        <div class="container">
+          <header class="section__header">
+            <h2 id="trust-title" class="section__title">Trust and scope.</h2>
+          </header>
+
+          <div class="card-grid card-grid--3">
+            <article class="trust-card">
+              <h3 class="trust-card__title">Published on npm</h3>
+              <p class="trust-card__text"><code>scopekit</code> is installable with npm and npx.</p>
+            </article>
+            <article class="trust-card">
+              <h3 class="trust-card__title">No API key required</h3>
+              <p class="trust-card__text">Indexing and packing are local.</p>
+            </article>
+            <article class="trust-card">
+              <h3 class="trust-card__title">No LLM indexing bill</h3>
+              <p class="trust-card__text">ScopeKit does not need an external model to build task packs.</p>
+            </article>
+            <article class="trust-card">
+              <h3 class="trust-card__title">Repo-local setup</h3>
+              <p class="trust-card__text">Setup writes local instruction files; it does not install into your AI account.</p>
+            </article>
+            <article class="trust-card">
+              <h3 class="trust-card__title">Optional MCP</h3>
+              <p class="trust-card__text">Use CLI packs by default; run MCP only when a client wants live tools.</p>
+            </article>
+            <article class="trust-card">
+              <h3 class="trust-card__title">Scoped claims</h3>
+              <p class="trust-card__text">Benchmarks are tied to specific repos, tasks, and clients.</p>
+            </article>
+          </div>
         </div>
       </section>
 
@@ -517,7 +585,7 @@ npm run test:auth</code></pre>
           <div class="card-grid card-grid--3">
             <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER#core-commands">
               <h3 class="learn-card__title">CLI command reference</h3>
-              <p class="learn-card__text">Every setup, pack, query, and install command.</p>
+              <p class="learn-card__text">Every setup, pack, query, install, and MCP command.</p>
               <span class="learn-card__arrow" aria-hidden="true">→</span>
             </a>
             <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/client-configs/claude-code.md">
@@ -537,7 +605,7 @@ npm run test:auth</code></pre>
             </a>
             <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks.md">
               <h3 class="learn-card__title">Benchmark methodology</h3>
-              <p class="learn-card__text">How the supplied-context comparisons were measured.</p>
+              <p class="learn-card__text">How supplied-context comparisons were measured.</p>
               <span class="learn-card__arrow" aria-hidden="true">→</span>
             </a>
             <a class="learn-card" href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/proofs/README.md">
@@ -560,23 +628,26 @@ npm run test:auth</code></pre>
             <details class="faq__item">
               <summary>Is ScopeKit a Graphify replacement?</summary>
               <p>
-                No. Graphify builds a queryable graph for exploring a codebase. ScopeKit builds a
-                small task pack for the moment an agent acts. They solve different problems.
+                No. Graphify is for exploring a knowledge graph. ScopeKit is for giving an agent
+                the smallest useful task packet. They overlap, but the workflows are different.
               </p>
             </details>
             <details class="faq__item">
               <summary>Does ScopeKit require an API key?</summary>
-              <p>No. ScopeKit's indexing and packing are local and deterministic.</p>
+              <p>No. Indexing and packing are local.</p>
             </details>
             <details class="faq__item">
               <summary>Does ScopeKit send code to an LLM?</summary>
-              <p>No for indexing and packing. It writes context for your assistant to use.</p>
+              <p>
+                No for indexing and packing. It creates context that you choose to give to your
+                assistant.
+              </p>
             </details>
             <details class="faq__item">
               <summary>Does setup install ScopeKit into my Claude or Codex account?</summary>
               <p>
-                No. It writes repo-local instruction files. Local agents can read them in that
-                repo. For remote or cloud agents, commit the generated files.
+                No. It writes repo-local instruction files. For remote or cloud agents, commit
+                those files.
               </p>
             </details>
             <details class="faq__item">
@@ -586,32 +657,30 @@ npm run test:auth</code></pre>
             <details class="faq__item">
               <summary>How do I use it with remote or cloud agents?</summary>
               <p>
-                Run <code>scopekit setup</code>, then commit the generated instruction files so the
-                remote agent can read them.
+                Run setup, commit the generated instruction files, and the remote agent can read
+                them.
               </p>
             </details>
             <details class="faq__item">
               <summary>Can I still use repo-context?</summary>
               <p>
-                Yes. The <code>repo-context</code> and <code>repo-context-mcp</code> commands still
-                work as deprecated aliases. New setups should use <code>scopekit</code>.
+                Yes. <code>repo-context</code> and <code>repo-context-mcp</code> are deprecated
+                aliases.
               </p>
             </details>
             <details class="faq__item">
               <summary>What claims are proven?</summary>
               <p>
-                In our scoped supplied-context benchmark suite: ~94% smaller median context with
-                equal-or-better quality and lower median usage on 5/5 Codex tasks, and 79–88%
-                smaller Claude context with equal-or-better quality on 5/5 Claude tasks. Plus the
-                locked-mode MCP reductions on auth-discovery and impact-analysis.
+                Scoped Codex and Claude supplied-context benchmarks, plus scoped Codex MCP proofs.
+                See
+                <a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/blob/main/docs/benchmarks.md">docs/benchmarks.md</a>
+                and
+                <a href="https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER/tree/main/docs/proofs">docs/proofs/</a>.
               </p>
             </details>
             <details class="faq__item">
               <summary>What claims are not proven?</summary>
-              <p>
-                No universal superiority over Graphify, no Claude token savings, and no
-                MCP-vs-Graphify claim.
-              </p>
+              <p>No universal superiority claim, no Claude token savings claim, no MCP-vs-Graphify claim.</p>
             </details>
           </div>
         </div>
