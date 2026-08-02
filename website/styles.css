@@ -235,7 +235,10 @@ code {
 
 .hero {
   padding: 3.5rem 0 4.5rem;
-  background: var(--bg-alt);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(15, 138, 95, 0.08), transparent 38%),
+    radial-gradient(circle at 85% 8%, rgba(212, 160, 23, 0.08), transparent 34%),
+    var(--bg-alt);
   border-bottom: 1px solid var(--border);
 }
 
@@ -883,6 +886,12 @@ code {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.metric-big:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .metric-big__value {
@@ -1143,6 +1152,12 @@ code {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.worked-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
 .worked-card::before {
@@ -1186,6 +1201,12 @@ code {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.trust-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 
 .trust-card__title {
