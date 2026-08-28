@@ -1,0 +1,13 @@
+# Local stdio MCP. No API key. No required config.
+# Starts the built CLI entry with `mcp` (same as `scopekit mcp`).
+runtime: typescript
+target: local
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+  commandFunction: |-
+    (config) => ({ command: "node", args: ["dist/index.js", "mcp"] })
+  exampleConfig: {}

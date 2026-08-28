@@ -120,10 +120,12 @@
     "vitest": "^3.0.9"
   },
   "license": "MIT",
+  "homepage": "https://scopekit-sandy.vercel.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git"
+    "url": "git+https://github.com/shrey1110-dotcom/ScopeKit.git"
   },
+  "mcpName": "io.github.shrey1110-dotcom/scopekit",
   "keywords": [
     "scopekit",
     "mcp",
