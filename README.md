@@ -2,7 +2,7 @@
 
 **The right files, not a graph to wander.**
 
-ScopeKit gives Claude, Codex, and Cursor a small task pack: the files, symbols, tests, relationships, risks, and validation commands for one job. Local. No API key. No LLM indexing.
+ScopeKit creates task-complete context packs for Claude, Codex, and Cursor: the files, symbols, tests, relationships, risks, and validation commands for one job. Local. No API key. No LLM indexing.
 
 [![npm version](https://img.shields.io/npm/v/scopekit)](https://www.npmjs.com/package/scopekit)
 [![license](https://img.shields.io/npm/l/scopekit)](LICENSE)
@@ -16,6 +16,12 @@ ScopeKit gives Claude, Codex, and Cursor a small task pack: the files, symbols, 
 npx scopekit setup
 scopekit index .
 scopekit pack "Find auth/session logic" --profile claude
+```
+
+Or install globally:
+
+```bash
+npm install -g scopekit
 ```
 
 Works with Cursor, Claude Code, and Codex. MCP is optional.
@@ -106,7 +112,7 @@ git commit -m "chore: add ScopeKit agent instructions"
 
 ## Optional MCP
 
-The CLI/skill workflow is the default. MCP is optional and gives live tool access to compatible clients.
+The CLI/skill workflow by default. MCP is optional and gives live tool access to compatible clients.
 
 ```bash
 scopekit install mcp   # writes .scopekit/mcp-config.example.json
