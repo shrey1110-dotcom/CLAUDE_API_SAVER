@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.shrey1110-dotcom/scopekit",
+  "title": "ScopeKit",
+  "description": "Task-complete context packs for Claude, Codex, and Cursor. Local CLI. No API key.",
+  "version": "0.2.0",
+  "websiteUrl": "https://scopekit-sandy.vercel.app",
+  "repository": {
+    "url": "https://github.com/shrey1110-dotcom/ScopeKit",
+    "source": "github",
+    "id": "1247991277"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "scopekit",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ]
+    }
+  ]
+}
