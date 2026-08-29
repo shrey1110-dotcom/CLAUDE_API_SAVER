@@ -2,7 +2,7 @@
 
 **Long Claude chats bill you for leftovers.**
 
-Every new turn re-sends the old ones. That's why Claude's `/context` view looks like most of a long window is Messages, not the question you just asked. A chat that doubled in size can cost about 2x on the next turn.
+Every new turn re-sends the old ones. Claude's `/usage` can show that most of your spend was at >150k context — leftover chat, billed again on the next turn. Longer sessions cost more even when cached. A pack starts the next job small, not already over 150k.
 
 ScopeKit creates task-complete context packs for Claude, Codex, and Cursor: the files, symbols, tests, relationships, risks, and validation commands for one job. Local. No API key. No LLM indexing.
 
