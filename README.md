@@ -1,49 +1,54 @@
 # ScopeKit
 
-ScopeKit creates task-complete context packs for AI coding agents. It gives Claude, Codex, Cursor, and MCP clients the relevant files, symbols, tests, relationships, risks, and validation commands for a specific task.
-
 **The right files, not a graph to wander.**
+
+ScopeKit creates task-complete context packs for Claude, Codex, and Cursor: the files, symbols, tests, relationships, risks, and validation commands for one job. Local. No API key. No LLM indexing.
 
 [![npm version](https://img.shields.io/npm/v/scopekit)](https://www.npmjs.com/package/scopekit)
 [![license](https://img.shields.io/npm/l/scopekit)](LICENSE)
-[![GitHub](https://img.shields.io/github/stars/shrey1110-dotcom/CLAUDE_API_SAVER?style=social)](https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER)
+[![GitHub stars](https://img.shields.io/github/stars/shrey1110-dotcom/ScopeKit?style=social)](https://github.com/shrey1110-dotcom/ScopeKit)
 
-## Install
+<!-- 10–15s GIF of a real `scopekit pack` run goes here. Do not invent a placeholder image. -->
+
+## Quickstart
+
+```bash
+npx scopekit setup
+scopekit index .
+scopekit pack "Find auth/session logic" --profile claude
+```
+
+Or install globally:
 
 ```bash
 npm install -g scopekit
 ```
 
-## Quick start
+Works with Cursor, Claude Code, and Codex. MCP is optional.
 
-```bash
-scopekit setup
-scopekit index .
-scopekit pack "Find auth/session logic" --profile claude
+Use `--profile claude` for richer Claude/Cursor packs, `--profile ultra` for the smallest Codex-style packs.
+
+Not a Graphify replacement — Graphify is a knowledge graph you query; ScopeKit is the packet for this task.
+
+*Illustrative pack (not from a specific repo):*
+
+```text
+Task: Find auth/session logic
+
+Relevant files:
+  src/auth/login.ts — login entrypoint
+  src/auth/session.ts — session validation/storage
+  src/server/auth.controller.ts — API route layer
+
+Relationships:
+  controller calls session service
+  login UI calls auth endpoint
+  tests cover session behavior
+
+Validation:
+  npm test
+  npm run test:auth
 ```
-
-- `scopekit setup` writes repo-local instruction files for Claude, Codex, and Cursor.
-- It does **not** globally install anything into Claude or Codex accounts.
-- For remote or cloud agents, commit the generated instruction files to the repo.
-
-## No global install
-
-```bash
-npx scopekit setup
-npx scopekit pack "Find auth/session logic" --profile claude
-```
-
-## What setup creates
-
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Claude Code instructions |
-| `AGENTS.md` | Codex / agent instructions |
-| `.cursor/rules/scopekit.mdc` | Cursor rule |
-| `.scopekit/mcp-config.example.json` | MCP snippet (when you run `scopekit install mcp`) |
-| `.scopekit/README.md` | Local quick reference |
-
-These files teach repo-local agents to use ScopeKit before broad repo search.
 
 ## Core commands
 
@@ -70,27 +75,17 @@ These files teach repo-local agents to use ScopeKit before broad repo search.
 | `ultra` | Smallest context — Codex-style workflows |
 | `claude` | Richer relationships, tests, and risks — Claude / Cursor |
 
-## Example output
+## What setup creates
 
-*Illustrative pack (not from a specific repo):*
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Claude Code instructions |
+| `AGENTS.md` | Codex / agent instructions |
+| `.cursor/rules/scopekit.mdc` | Cursor rule |
+| `.scopekit/mcp-config.example.json` | MCP snippet (when you run `scopekit install mcp`) |
+| `.scopekit/README.md` | Local quick reference |
 
-```text
-Task: Find auth/session logic
-
-Relevant files:
-  src/auth/login.ts — login entrypoint
-  src/auth/session.ts — session validation/storage
-  src/server/auth.controller.ts — API route layer
-
-Relationships:
-  controller calls session service
-  login UI calls auth endpoint
-  tests cover session behavior
-
-Validation:
-  npm test
-  npm run test:auth
-```
+These files teach repo-local agents to use ScopeKit before broad repo search. `scopekit setup` does **not** globally install anything into Claude or Codex accounts. For remote or cloud agents, commit the generated instruction files.
 
 ## Use with Claude, Codex, Cursor
 
@@ -143,8 +138,8 @@ Details: [docs/benchmarks.md](docs/benchmarks.md) · [docs/benchmarks/skill-head
 ## Local development
 
 ```bash
-git clone https://github.com/shrey1110-dotcom/CLAUDE_API_SAVER.git
-cd CLAUDE_API_SAVER
+git clone https://github.com/shrey1110-dotcom/ScopeKit.git
+cd ScopeKit
 npm install
 npm run build
 npm run graph:build
@@ -162,6 +157,7 @@ scopekit setup --dry-run
 
 | Resource | URL |
 |----------|-----|
+| Site | https://scopekit-sandy.vercel.app |
 | npm package | https://www.npmjs.com/package/scopekit |
 | Benchmarks | [docs/benchmarks.md](docs/benchmarks.md) |
 | Proofs | [docs/proofs/README.md](docs/proofs/README.md) |
