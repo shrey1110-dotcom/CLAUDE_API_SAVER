@@ -1,14 +1,19 @@
 # ScopeKit
 
-**The right files, not a graph to wander.**
+**Long Claude chats bill you for leftovers.**
+
+Every new turn re-sends the old ones. Claude's `/usage` can show that "95% of your usage was at >150k context" — leftover chat, billed again on the next turn. Longer sessions cost more even when cached. A pack starts the next job small, not already over 150k.
 
 ScopeKit creates task-complete context packs for Claude, Codex, and Cursor: the files, symbols, tests, relationships, risks, and validation commands for one job. Local. No API key. No LLM indexing.
+
+![Leftover conversation vs a ScopeKit pack](docs/assets/context-tax.gif)
+
+A pack is the files for this job. Not the last 40 minutes of chat.
+
 
 [![npm version](https://img.shields.io/npm/v/scopekit)](https://www.npmjs.com/package/scopekit)
 [![license](https://img.shields.io/npm/l/scopekit)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/shrey1110-dotcom/ScopeKit?style=social)](https://github.com/shrey1110-dotcom/ScopeKit)
-
-<!-- 10–15s GIF of a real `scopekit pack` run goes here. Do not invent a placeholder image. -->
 
 ## Quickstart
 
